@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Редактор синонимов ШК v10</title>
+  <title>Редактор синонимов ШК v12</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <style>
@@ -256,8 +256,8 @@
     /* ── Дубль-предупреждение ── */
     .dup-warn { background: #fce8e6; border: 1px solid #f5a9a2; border-radius: 2px; padding: 4px 10px; font-size: 11px; color: #721c24; margin-top: 4px; display: none; }
     .dup-warn.show { display: block; }
-    :root{--bg:#f0f0f0;--surface:#fff;--text:#1f1f1f;--mute:#666;--border:#d0d0d0;--primary:#217346;--th:#dce6f1;--th-b:#b0c4de;--hover:#f0f7f2;--sub:#f8f8f8;}
-    body.dark{--bg:#1a1a1a;--surface:#252525;--text:#e8e8e8;--mute:#999;--border:#3a3a3a;--primary:#2d9a5f;--th:#1e2a3a;--th-b:#2d4a6a;--hover:#1e2e25;--sub:#1e1e1e;}
+    :root{--bg:#f0f0f0;--surface:#fff;--text:#1f1f1f;--mute:#666;--border:#d0d0d0;--primary:#217346;--th:#dce6f1;--th-b:#b0c4de;--hover:#f0f7f2;--sub:#f8f8f8;--mine:#e8f4ea;--mine-b:#2d9a5f;}
+    body.dark{--bg:#1a1a1a;--surface:#252525;--text:#e8e8e8;--mute:#999;--border:#3a3a3a;--primary:#2d9a5f;--th:#1e2a3a;--th-b:#2d4a6a;--hover:#1e2e25;--sub:#1e1e1e;--mine:#1a2e1a;--mine-b:#3dba6f;}
     body.dark{background:var(--bg);color:var(--text);}
     body.dark td{background:var(--surface)!important;color:var(--text)!important;border-color:var(--border)!important;}
     body.dark th{background:var(--th)!important;color:var(--text)!important;border-color:var(--th-b)!important;}
@@ -278,8 +278,28 @@
     body.dark .empty{color:#666;}
     body.dark .syn-pill{background:#1e2a3a;color:#8ab4f8;}
     body.dark .syn-x{background:#2d4a6a;}
-    body.dark tr.pair-a:hover td,body.dark tr.pair-b:hover td{background:var(--hover)!important;}
-    #mTable thead th{height:36px;white-space:nowrap;vertical-align:middle;}
+    tr.mine-hdr td{background:var(--mine)!important;border-top:2px solid var(--mine-b)!important;font-size:12px;}
+    body.dark tr.mine-hdr td{background:var(--mine)!important;color:var(--text)!important;}
+    tr.mine-hdr-a{cursor:pointer;}
+    tr.mine-hdr-a:hover td{filter:brightness(.95);}
+    tr.mine-cand td{background:#fafffe!important;padding-left:12px;}
+    body.dark tr.mine-cand td{background:#1c2820!important;}
+    tr.mine-cand:hover td{background:#f0faf4!important;}
+    body.dark tr.mine-cand:hover td{background:#1e3028!important;}
+    .stat-mine .stat-lbl{font-size:9px;}
+    .my-chip{display:inline-flex;align-items:center;background:#e8f4ea;border:1px solid #2d9a5f;border-radius:4px;padding:2px 6px;gap:4px;font-size:11px;color:#155724;flex-shrink:0;}
+    body.dark .my-chip{background:#1a3328;border-color:#2d9a5f;color:#7dffb3;}
+    .my-chip-x{border:none;background:none;color:#888;cursor:pointer;font-size:11px;padding:0 2px;line-height:1;}
+    .my-chip-x:hover{color:#c00;}
+    .t-btn-mine{background:#e8f4ea;border-color:#2d9a5f;color:#155724;}
+    .t-btn-mine:hover{background:#d0ead5!important;border-color:#155724!important;}
+    body.dark .t-btn-mine{background:#1a3328;border-color:#2d9a5f;color:#7dffb3;}
+    .s-btn-mine{background:#e8f4ea;border-color:#2d9a5f;color:#155724;font-weight:600;}
+    .s-btn-mine:hover:not(:disabled){background:#d0ead5;border-color:#155724;}
+    body.dark .s-btn-mine{background:#1a3328;border-color:#2d9a5f;color:#7dffb3;}
+    .s-btn-green{background:#e6f4ea;border-color:#2d9a5f;color:#155724;font-weight:600;}
+    .s-btn-green:hover:not(:disabled){background:#d0ead5;border-color:#155724;}
+    body.dark .s-btn-green{background:#1a3328;border-color:#2d9a5f;color:#7dffb3;}
     #eTable{table-layout:fixed;width:100%;}
     #eTable th:nth-child(2),#eTable td:nth-child(2){width:220px;min-width:220px;max-width:220px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
     #toast-rack{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column-reverse;gap:8px;pointer-events:none;}
@@ -300,16 +320,7 @@
     body.dark kbd{background:#333;border-color:#555;color:#ddd;}
     .instr-body{padding:4px 16px 12px;font-size:12px;line-height:1.6;max-height:70vh;overflow-y:auto;}
     .instr-body h3{font-size:12px;font-weight:700;margin:12px 0 4px;color:var(--primary);}
-    .instr-body p,.instr-body li{margin:2px 0;}
-    .instr-body ol,.instr-body ul{padding-left:18px;margin:2px 0 6px;}
-    .instr-badge{display:inline-block;padding:1px 7px;border-radius:3px;font-size:10px;font-weight:600;vertical-align:middle;}
-    .ib-syn{background:#e6f4ea;color:#155724;}.ib-new{background:#fff3cd;color:#856404;}
-    .ib-mrg{background:#cfe2ff;color:#084298;}.ib-knw{background:#d1ecf1;color:#0c5460;}.ib-bc{background:#e9d5ff;color:#4c1d95;}
     body.dark .instr-body h3{color:#7dffb3;}
-    .s-btn-green{background:#e6f4ea;border-color:#2d9a5f;color:#155724;font-weight:600;}
-    .s-btn-green:hover:not(:disabled){background:#d0ead5;border-color:#155724;}
-    body.dark .s-btn-green{background:#1a3328;border-color:#2d9a5f;color:#7dffb3;}
-    body.dark .s-btn-green:hover:not(:disabled){background:#1e3d30;border-color:#4dbb80;}
     @media(max-width:900px){.toolbar-status{display:none;}}
     @media(max-width:640px){.t-btn,.s-btn{padding:3px 6px;font-size:11px;}.tab{padding:5px 10px;font-size:11px;}}
 
@@ -319,7 +330,7 @@
 
 <!-- ════════════════════ TOOLBAR ════════════════════ -->
 <header class="toolbar">
-  <span class="toolbar-title">📊 Редактор синонимов ШК <span style="opacity:.5;font-size:10px;font-weight:400">v10</span></span>
+  <span class="toolbar-title">📊 Редактор синонимов ШК <span style="opacity:.5;font-size:10px">v12</span></span>
   <div class="toolbar-sep"></div>
   <button class="t-btn" id="openJsonBtn">📂 Открыть JSON</button>
   <button class="t-btn" id="saveJsonBtn">💾 Сохранить JSON</button>
@@ -333,15 +344,17 @@
   <button class="t-btn accent" id="loadPricesBtn">📂 Загрузить прайсы</button>
   <input type="file" id="priceIn" accept=".csv,.xlsx,.xls" multiple>
   <div class="t-chips" id="tChips"></div>
+  <button class="t-btn t-btn-mine" id="myPriceBtn" title="Свой прайс как якорь">📋 Мой прайс</button>
+  <input type="file" id="myPriceIn" accept=".csv,.xlsx,.xls" style="display:none">
+  <div class="my-chip" id="myPriceChip" style="display:none"><span id="myChipName" style="font-size:11px;margin-right:4px"></span><button class="my-chip-x" id="myPriceRemove" title="Убрать">✕</button></div>
   <div class="toolbar-sep"></div>
-  <div class="toolbar-sep"></div>
-  <button class="t-btn" id="instrBtn" title="Инструкция">📖 Инструкция</button>
+  <button class="t-btn" id="instrBtn">📖</button>
   <button class="t-btn" id="darkBtn" title="Тёмная тема (Alt+D)">🌙 Тема</button>
   <button class="t-btn" id="kbdBtn" title="Горячие клавиши">⌨️</button>
   <span id="autosave-dot" title="Автосохранение">●</span>
   <span class="toolbar-status" id="jsonStatus">JSON не загружен</span>
 </header>
-<div id="offline-banner">⚠️ Нет интернета — XLSX/PapaParse могут не работать.</div>
+<div id="offline-banner">⚠️ Нет подключения к интернету.</div>
 
 <!-- ════════════════════ TABS ════════════════════ -->
 <nav class="tab-bar">
@@ -357,8 +370,11 @@
     <div class="sub-bar" id="matcherSubBar" style="display:none">
       <span class="sub-label">Поиск:</span>
       <input class="search-inp" id="matchSearchInp" placeholder="🔍 Поиск по штрихкоду / названию..." style="flex:1;max-width:400px" disabled>
-      <button class="s-btn s-btn-green" id="addAllSameBCBtn" title="Добавить все пары = ШК которых нет в базе" style="display:none">➕ Добавить все новые</button>
-      <button class="s-btn" id="rerunBtn" title="Полный пересчёт">🔄 Пересчитать</button>
+      <button class="s-btn s-btn-green" id="addAllSameBCBtn" style="display:none" title="Добавить все = ШК">➕ Добавить все новые</button>
+      <button class="s-btn s-btn-mine" id="myViewToggle" style="display:none" title="Вид А / Вид Б">⊞ Вид А</button>
+      <div class="sub-sep" id="hideInBaseSep" style="display:none"></div>
+      <button class="s-btn" id="hideInBaseBtn" style="display:none" title="Скрыть пары, которые уже есть в базе синонимов">🚫 Скрыть «в базе»</button>
+      <button class="s-btn" id="rerunBtn" title="Полный пересчёт" disabled>🔄 Пересчитать</button>
     </div>
     <div class="progress-row" id="progressRow">
       <div class="progress-lbl" id="progressLbl">Загрузка...</div>
@@ -373,6 +389,8 @@
         <div class="stat-val" id="sKnown">0</div><div class="stat-lbl">Синонимов в базе</div></div>
       <div class="stat"  data-v="added">
         <div class="stat-val" id="sAdded">0</div><div class="stat-lbl">Добавлено</div></div>
+      <div class="stat stat-mine" id="myStat" data-v="mine" style="display:none">
+        <div class="stat-val" id="sMine">0</div><div class="stat-lbl">📋 Мой прайс</div></div>
     </div>
     <div class="tbl-wrap">
       <div class="empty" id="mEmpty">
@@ -384,13 +402,18 @@
       <table id="mTable" style="display:none">
         <thead>
           <tr>
-            <th class="td-n">#</th>
-            <th class="td-score">%</th>
+            <th class="td-n" rowspan="2">#</th>
+            <th class="td-score" rowspan="2">%</th>
             <th style="width:105px">Источник</th>
             <th>Название</th>
             <th style="width:140px">Штрихкод</th>
-            <th style="width:68px">Тип</th>
-            <th style="width:44px"></th>
+            <th style="width:68px" rowspan="2">Тип</th>
+            <th style="width:44px" rowspan="2"></th>
+          </tr>
+          <tr>
+            <th style="background:#e8eff8;font-size:10px;color:#555;font-weight:500;border-top:none">Источник</th>
+            <th style="background:#e8eff8;font-size:10px;color:#555;font-weight:500;border-top:none">Название</th>
+            <th style="background:#e8eff8;font-size:10px;color:#555;font-weight:500;border-top:none">Штрихкод</th>
           </tr>
         </thead>
         <tbody id="mTbody"></tbody>
@@ -424,11 +447,11 @@
         <div class="empty-ttl">База пуста</div>
         <div class="empty-sub">Загрузите JSON или создайте группы вручную</div>
       </div>
-      <table id="eTable" style="display:none;table-layout:fixed">
+      <table id="eTable" style="display:none">
         <thead>
           <tr>
             <th class="td-n">#</th>
-            <th style="width:220px;min-width:220px;max-width:220px">Название</th>
+            <th style="min-width:200px">Название</th>
             <th style="width:165px">Главный ШК</th>
             <th>Синонимы ШК <span style="font-weight:400;color:#888;font-size:10px">(Enter для добавления)</span></th>
             <th style="width:40px"></th>
@@ -498,8 +521,25 @@
 
 <script id="embeddedData" type="application/json">null</script>
 <div id="toast-rack"></div>
+
+<!-- ════════════════════ CONFIRM MODAL ════════════════════ -->
+<div class="modal-bg" id="confirmModal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-hdr">
+      <span id="confirmTitle">Подтверждение</span>
+      <button class="modal-x" id="confirmClose">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px">
+      <p id="confirmMsg" style="font-size:13px;line-height:1.6;margin-bottom:4px"></p>
+    </div>
+    <div class="modal-ftr">
+      <button class="m-btn cancel" id="confirmCancelBtn">Отмена</button>
+      <button class="m-btn ok"     id="confirmOkBtn">Подтвердить</button>
+    </div>
+  </div>
+</div>
 <div class="modal-bg" id="kbdModal"><div class="modal" style="width:420px"><div class="modal-hdr"><span>⌨️ Горячие клавиши</span><button class="modal-x" id="kbdClose">✕</button></div><div class="modal-body" style="padding:12px 16px"><table class="kbd-table"><tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>Отменить</td></tr><tr><td><kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>Повторить</td></tr><tr><td><kbd>Alt</kbd>+<kbd>D</kbd></td><td>Тёмная тема</td></tr><tr><td><kbd>Esc</kbd></td><td>Закрыть окно</td></tr></table></div></div></div>
-<div class="modal-bg" id="instrModal"><div class="modal" style="width:580px;max-width:96vw"><div class="modal-hdr"><span>📖 Инструкция по работе</span><button class="modal-x" id="instrClose">✕</button></div><div class="instr-body"><h3>🎯 Цель</h3><p>Связать штрихкоды одного товара у разных поставщиков в группы синонимов.</p><h3>🚀 Старт</h3><ol><li><b>Загрузить JSON</b> — текущая база.</li><li><b>Прайсы</b> — загрузить все прайсы сразу.</li><li>Дождаться анализа.</li></ol><h3>📂 Порядок вкладок</h3><ol><li><b>= ШК</b> — одинаковый ШК у разных поставщиков. <b>➕ Добавить все новые</b> для массового добавления.</li><li><b>Синонимы</b> — один товар уже в базе. Сверху вниз по %.</li><li><b>Объединить</b> — слияние двух групп. Необратимо без Ctrl+Z.</li><li><b>Новое</b> — создать группу кликом по строке.</li></ol><h3>🔄 Пересчитать</h3><p>Полный анализ для поиска новых пар после серии добавлений.</p><h3>✂️ Развязать</h3><p>Вкладка <b>Синонимов в базе</b> — кнопка ✂ удаляет синоним из группы.</p><h3>💡 Советы</h3><ul><li>Сначала добавляйте новые группы.</li><li>Перед созданием группы ищите ШК в строке поиска.</li><li>Сохраняйте JSON после каждого этапа.</li></ul></div></div></div>
+<div class="modal-bg" id="instrModal"><div class="modal" style="width:560px;max-width:96vw"><div class="modal-hdr"><span>📖 Инструкция</span><button class="modal-x" id="instrClose">✕</button></div><div class="instr-body"><h3>📋 Режим «Мой прайс»</h3><p>Загрузите свой прайс кнопкой <b>📋 Мой прайс</b>. Матчер найдёт кандидатов из прайсов поставщиков только для ваших позиций (порог ≥25%). Кнопка <b>[+]</b> добавляет ШК поставщика как синоним вашей позиции.</p><ul><li><b>Вид Б</b> — развёрнутый: заголовок + все кандидаты сразу.</li><li><b>Вид А</b> — свёрнутый: клик раскрывает кандидатов.</li><li>«В базе» — синоним уже в JSON. «Новое» — ещё нет.</li></ul><h3>📂 Стандартный режим</h3><ol><li><b>= ШК</b> — одинаковый ШК у разных поставщиков.</li><li><b>Синонимы</b> — один товар уже в базе (по %).</li><li><b>Объединить</b> — слияние двух групп.</li><li><b>Новое</b> — создать группу кликом.</li><li><b>Синонимов в базе</b> — ✂ удаляет синоним.</li></ol><h3>💡 Советы</h3><ul><li>🔄 Пересчитать — после серии добавлений.</li><li>Ctrl+Z/Y — отмена/повтор. Автосохранение в localStorage.</li></ul></div></div></div>
 
 <script>
 "use strict";
@@ -509,14 +549,21 @@
 let db      = {};
 let changes = 0;
 let currentFileName = '';
-let priceFiles  = [];
+let priceFiles    = [];
+let myPriceFile   = null;   // свой прайс — якорь
+let myPairs       = [];
+let myViewMode    = 'B';
+let myExpandedSet = new Set();
+
 let activePairs = [];
 let sameBCPairs = [];
 let knownPairs  = [];
 let addedPairs  = [];
 let currentView = 'all';
+let hideInBase  = false;   // скрывать пары «в базе» при просмотре
 let CANDIDATE_LIMIT = 0; // 0 = авторасчёт (5% словаря, диапазон 35–300); >0 = жёсткий лимит
 let pending     = null;
+let _dupsCache  = null;    // кэш дублей — инвалидируется в notifyChange/undo/redo/load
 
 const HISTORY_LIMIT = 50;
 let undoStack = [], redoStack = [];
@@ -531,6 +578,9 @@ const SIM_MIN = 40, SIM_REVIEW = 60, SIM_HIGH = 85;
 // =============================================================================
 const WORKER_SRC = `
 "use strict";
+// =============================================================================
+// ТРАНСЛИТЕРАЦИЯ LAT → CYR
+// =============================================================================
 const TL = [
   ['ight','айт'],['tion','шн'],['ough','оф'],['sch','ш'],['tch','ч'],
   ['all','ол'],['ing','инг'],['igh','ай'],['ull','ул'],['oor','ур'],
@@ -550,9 +600,32 @@ const WORD_END = [
   [/([бвгджзклмнпрстфхцчшщ])ес$/, '$1с'],
   [/([бвгджзклмнпрстфхцчшщ])е$/,  '$1']
 ];
-const STOP = new Set(['и','или','в','на','с','по','для','к','от','из','за','не','как','это','то']);
+const STOP = new Set(['и','или','в','на','с','по','для','к','от','из','за','не','как','это','то',
+  'the','a','an','of','for','with','and','or','in','on','at','to','by','от']);
 
-// ===== НОРМАЛИЗАЦИЯ ЕДИНИЦ ИЗМЕРЕНИЙ =====
+// =============================================================================
+// [УЛУЧШ. 3] НОРМАЛИЗАЦИЯ ОМОНИМОВ КИР/ЛАТ
+// Визуально одинаковые буквы разных алфавитов → единая кириллица
+// =============================================================================
+const HOMOGLYPH_MAP = {
+  // Латиница → Кириллица (визуальные омонимы)
+  'A':'а','B':'в','C':'с','E':'е','H':'н','K':'к','M':'м',
+  'O':'о','P':'р','T':'т','X':'х','a':'а','c':'с','e':'е',
+  'o':'о','p':'р','x':'х','y':'у'
+};
+function fixHomoglyphs(s) {
+  // Применяем только к словам, которые похожи на смешанные (есть и кир, и лат)
+  return s.replace(/[\\w]+/g, word => {
+    const hasCyr = /[а-яё]/i.test(word);
+    const hasLat = /[a-z]/i.test(word);
+    if (!hasCyr || !hasLat) return word; // чисто один алфавит — не трогаем
+    return word.replace(/[AaBbCcEeHhKkMmOoPpTtXxYy]/g, ch => HOMOGLYPH_MAP[ch] || ch);
+  });
+}
+
+// =============================================================================
+// НОРМАЛИЗАЦИЯ ЕДИНИЦ ИЗМЕРЕНИЙ
+// =============================================================================
 const UNIT_CANON = new Map([
   ['г','г'],['г.','г'],['гр','г'],['гр.','г'],['грамм','г'],['граммов','г'],['грамма','г'],
   ['g','г'],['gr','г'],['gramm','г'],['gram','г'],
@@ -562,20 +635,26 @@ const UNIT_CANON = new Map([
   ['л','л'],['л.','л'],['литр','л'],['литров','л'],['литра','л'],
   ['l','л'],['lt','л'],['ltr','л'],
   ['шт','шт'],['шт.','шт'],['штука','шт'],['штук','шт'],['штуки','шт'],
-  ['pcs','шт'],['pc','шт'],
+  ['pcs','шт'],['pc','шт'],['pcs.','шт'],
 ]);
 const UNIT_CONV = {
-  'мг': { base: 'г',  factor: 0.001  },
-  'г':  { base: 'г',  factor: 1      },
-  'кг': { base: 'г',  factor: 1000   },
-  'мл': { base: 'мл', factor: 1      },
-  'л':  { base: 'мл', factor: 1000   },
+  'мг':{ base:'г',  factor:0.001  },
+  'г': { base:'г',  factor:1      },
+  'кг':{ base:'г',  factor:1000   },
+  'мл':{ base:'мл', factor:1      },
+  'л': { base:'мл', factor:1000   },
 };
+
+// =============================================================================
+// [УЛУЧШ. 8] РАСШИРЕННЫЙ СЛОВАРЬ АББРЕВИАТУР
+// =============================================================================
 const ABBR_DICT = new Map([
+  // Упаковка
   ['уп','упаковка'],['упак','упаковка'],['упк','упаковка'],
   ['нб','набор'],['нбр','набор'],
   ['кор','коробка'],['фл','флакон'],
-  ['тюб','тюбик'],['пак','пакет'],
+  ['тюб','тюбик'],['туб','тюбик'],
+  ['пак','пакет'],
   ['банк','банка'],['бн','банка'],
   ['ведр','ведро'],['вед','ведро'],
   ['канист','канистра'],['кан','канистра'],
@@ -588,6 +667,7 @@ const ABBR_DICT = new Map([
   ['пл','пластик'],['пласт','пластик'],['пластм','пластик'],
   ['мет','металл'],['жест','жесть'],['жб','жесть'],['ж/б','жесть'],
   ['ком','комплект'],['компл','комплект'],['кмп','комплект'],
+  // Характеристики
   ['проф','профессиональный'],
   ['натур','натуральный'],['нат','натуральный'],
   ['конц','концентрат'],
@@ -595,23 +675,40 @@ const ABBR_DICT = new Map([
   ['ув','увлажняющий'],['отб','отбеливающий'],
   ['муж','мужской'],['жен','женский'],['дет','детский'],
   ['эко','эко'],['bio','био'],['organic','органик'],['org','органик'],
+  // [НОВОЕ] Бытовая химия / косметика
+  ['конд','кондиционер'],
+  ['зуб','зубной'],
+  ['гел','гель'],
+  ['мыл','мыло'],
+  ['стир','стиральный'],
+  ['пос','посудомоечный'],
+  ['освеж','освежитель'],
+  ['дез','дезодорант'],
+  ['шамп','шампунь'],
+  ['бальз','бальзам'],
+  ['ополаск','ополаскиватель'],
+  // [НОВОЕ] Составные
+  ['2в1','двавод'],['3в1','тривод'],['4в1','четыревод'],
+  // [НОВОЕ] Категории
+  ['пит','питательный'],['акт','активный'],['инт','интенсивный'],
+  ['восст','восстанавливающий'],['защ','защитный'],['укреп','укрепляющий'],
 ]);
+
 function normalizeUnits(s) {
   return s.replace(
-    /(\d+(?:[.,]\d+)?)\s*([а-яёa-zA-Z]{1,12}\.?)/gi,
+    /(\\d+(?:[.,]\\d+)?)\\s*([а-яёa-zA-Z]{1,12}\\.?)/gi,
     (match, num, unitStr) => {
-      const uk = unitStr.toLowerCase().replace(/\.$/, '');
+      const uk = unitStr.toLowerCase().replace(/\\.$/, '');
       const canon = UNIT_CANON.get(uk);
       if (!canon) return match;
       const conv = UNIT_CONV[canon];
       if (!conv) return num + canon + ' ';
-      const val = Math.round(
-        parseFloat(num.replace(',', '.')) * conv.factor * 100000
-      ) / 100000;
+      const val = Math.round(parseFloat(num.replace(',', '.')) * conv.factor * 100000) / 100000;
       return val + conv.base + ' ';
     }
   );
 }
+
 function expandAbbr(tokens) {
   const res = [];
   for (const t of tokens) {
@@ -626,6 +723,9 @@ function expandAbbr(tokens) {
 const BC_COLS_W   = ['штрихкод','штрих-код','barcode','шк','ean','код'];
 const NAME_COLS_W = ['название','наименование','name','товар','продукт','наим'];
 
+// =============================================================================
+// ТРАНСЛИТЕРАЦИЯ
+// =============================================================================
 function translitWord(w) {
   let s = w.toLowerCase(), out = '', i = 0;
   while (i < s.length) {
@@ -638,6 +738,10 @@ function translitWord(w) {
   for (const [re, rep] of WORD_END) out = out.replace(re, rep);
   return out;
 }
+
+// =============================================================================
+// СТЕММЕР (Snowball Russian)
+// =============================================================================
 const _VOW=new Set('аеёиоуыэюя'.split(''));const _isV=c=>_VOW.has(c);
 function _rv(w){for(let i=0;i<w.length;i++)if(_isV(w[i]))return i+1;return w.length;}
 function _r1(w){for(let i=1;i<w.length;i++)if(!_isV(w[i])&&_isV(w[i-1]))return i+1;return w.length;}
@@ -646,16 +750,68 @@ function _strip(w,ss,f){const s=[...ss].sort((a,b)=>b.length-a.length);for(const
 function _stripP(w,ss,f,p){const s=[...ss].sort((a,b)=>b.length-a.length);for(const x of s){if(w.endsWith(x)){const b=w.slice(0,-x.length);if(b.length>=f&&p.has(b.slice(-1)))return b;}}return null;}
 function stemRu(word){if(!word||word.length<=2)return word;if(!/[а-яё]/.test(word))return word;const rv=_rv(word),r1=_r1(word),r2=_r2(word,r1);let w=word,r;r=_strip(w,['ившись','ивши','ывшись','ывши','ив','ыв'],rv);if(r!=null){w=r;}else{r=_stripP(w,['авшись','явшись','авши','явши','ав','яв'],rv,new Set(['а','я']));if(r!=null)w=r;}r=_strip(w,['ся','сь'],rv);if(r!=null)w=r;const ADJ=['ими','ыми','ией','ий','ый','ой','ей','ем','им','ым','ом','его','ого','ему','ому','ую','юю','ая','яя','ое','ее'];const PA=['вшем','вших','вшим','вшей','вшего','ем','нн','вш','ющ','щ'],PF=['ивш','ывш','ующ'];let adj=false;for(const s of [...ADJ].sort((a,b)=>b.length-a.length)){if(w.endsWith(s)&&(w.length-s.length)>=rv){const b=w.slice(0,-s.length);let p=_stripP(b,PA,rv,new Set(['а','я']));if(p==null)p=_strip(b,PF,rv);w=p!=null?p:b;adj=true;break;}}if(!adj){const VA=['ала','яла','али','яли','ало','яло','ана','яна','ает','яет','ают','яют','аешь','яешь','ай','яй','ал','ял','ать','ять'];const VF=['ила','ыла','ена','ейте','уйте','ите','или','ыли','ей','уй','ил','ыл','им','ым','ен','ило','ыло','ено','ует','уют','ит','ыт','ишь','ышь','ую','ю'];r=_stripP(w,VA,rv,new Set(['а','я']));if(r==null)r=_strip(w,VF,rv);if(r!=null){w=r;}else{const N=['иями','ями','ами','ией','ием','иям','ев','ов','ие','ье','еи','ии','ей','ой','ий','ям','ем','ам','ом','ях','ах','е','и','й','о','у','а','ь','ю','я'];r=_strip(w,N,rv);if(r!=null)w=r;}}if(w.endsWith('и')&&(w.length-1)>=rv)w=w.slice(0,-1);r=_strip(w,['ость','ост'],r2);if(r!=null)w=r;if(w.endsWith('нн'))w=w.slice(0,-1);if(w.endsWith('ь')&&(w.length-1)>=rv)w=w.slice(0,-1);return w.length>=2?w:word;}
 
+// =============================================================================
+// [УЛУЧШ. 4] ГРУППЫ УПАКОВКИ ДЛЯ ОБНАРУЖЕНИЯ КОНФЛИКТОВ
+// =============================================================================
+const PKG_GROUPS = [
+  ['флакон','бутылк','спрей','дозатор','диспенсер'],
+  ['пакет','саше','дойпак','пауч'],
+  ['банка','жесть','жб','жестяной'],
+  ['тюбик','туба','туб'],
+  ['ведро','канистра'],
+  ['стекло','стекл'],
+  ['пэт','пластик'],
+];
+function pkgConflict(n1, n2) {
+  for (const grp of PKG_GROUPS) {
+    const in1 = grp.some(w => n1.includes(w));
+    const in2 = grp.some(w => n2.includes(w));
+    if (in1 && !in2) {
+      // n1 явно указывает упаковку — проверяем, есть ли в n2 другая группа
+      if (PKG_GROUPS.some(g => g !== grp && g.some(w => n2.includes(w)))) return true;
+    }
+    if (in2 && !in1) {
+      if (PKG_GROUPS.some(g => g !== grp && g.some(w => n1.includes(w)))) return true;
+    }
+  }
+  return false;
+}
+
+// =============================================================================
+// НОРМАЛИЗАЦИЯ — главная функция
+// [УЛУЧШ. 3] Омонимы Кир/Лат
+// [УЛУЧШ. 9] Дефисы → пробелы
+// [УЛУЧШ. 10] Числа извлекаем ДО стемминга (после конвертации единиц)
+// =============================================================================
+function preNorm(raw) {
+  // Шаг 1: конвертация единиц
+  let s = normalizeUnits(String(raw || ''));
+  // Шаг 2: [УЛУЧШ. 9] дефисы между буквами → пробел, числа-буквы оставляем
+  s = s.replace(/([а-яёa-zA-Z])-([а-яёa-zA-Z])/gi, '$1 $2');
+  // Шаг 3: нижний регистр
+  s = s.toLowerCase();
+  return s;
+}
 function normalize(raw) {
   if (!raw) return '';
-  let s = normalizeUnits(String(raw));
-  s = s.toLowerCase()
-    .replace(/[^\wа-яёa-z0-9\s]/gi, ' ')
-    .replace(/[a-z]+/gi, m => translitWord(m))
-    .replace(/\s+/g, ' ').trim();
-  const _t=expandAbbr(s.split(' ').filter(w=>w.length>1&&!STOP.has(w)));
-  return _t.map(t=>stemRu(t)).join(' ');
+  let s = preNorm(raw);
+  // [УЛУЧШ. 3] Фикс омонимов кир/лат
+  s = fixHomoglyphs(s);
+  s = s.replace(/[^\\wа-яё0-9\\s]/gi, ' ')
+       .replace(/[a-z]+/gi, m => translitWord(m))
+       .replace(/\\s+/g, ' ').trim();
+  // [УЛУЧШ. 6] Фильтр токенов: буквенно-цифровые длиной >= 1 (сохраняем 2М, HP, WD)
+  const toks = s.split(' ').filter(w => {
+    if (STOP.has(w)) return false;
+    if (/^\\d+$/.test(w)) return true; // чистые числа — оставляем
+    return w.length >= 2 || /^[а-яёa-z0-9]+$/i.test(w);
+  });
+  return expandAbbr(toks).map(t => stemRu(t)).join(' ');
 }
+
+// =============================================================================
+// СХОЖЕСТЬ: ТРИГРАММЫ, LCS, TF-IDF
+// =============================================================================
 function trigrams(s) {
   const st = new Set(), p = '#' + s + '#';
   for (let i = 0; i < p.length - 2; i++) st.add(p.slice(i, i + 3));
@@ -672,102 +828,159 @@ function lcsLen(a, b) {
   let prev = new Uint8Array(B.length + 1), curr = new Uint8Array(B.length + 1);
   for (let i = 0; i < A.length; i++) {
     for (let j = 0; j < B.length; j++)
-      curr[j+1] = A[i] === B[j] ? prev[j] + 1 : Math.max(curr[j], prev[j+1]);
+      curr[j+1] = A[i]===B[j] ? prev[j]+1 : Math.max(curr[j], prev[j+1]);
     [prev, curr] = [curr, prev]; curr.fill(0);
   }
   return prev[B.length];
 }
 function lcsSim(a, b) {
-  if (!a || !b) return (a === b) ? 1 : 0;
+  if (!a || !b) return (a===b) ? 1 : 0;
   const wa = Math.min(a.split(' ').length, 80), wb = Math.min(b.split(' ').length, 80);
   return 2 * lcsLen(a, b) / (wa + wb);
 }
 function extractNums(s) {
-  return (s.match(/\d+(?:[.,]\d+)?/g) || []).map(n => parseFloat(n.replace(',', '.')));
+  return (s.match(/\\d+(?:[.,]\\d+)?/g) || []).map(n => parseFloat(n.replace(',', '.')));
 }
+
 // ===== TF-IDF =====
 function buildIDF(items) {
   const df = new Map();
   for (const it of items) {
-    const seen = new Set(it._norm.split(' ').filter(t => t.length > 1));
-    for (const t of seen) df.set(t, (df.get(t) || 0) + 1);
+    const seen = new Set(it._norm.split(' ').filter(t => t.length > 0));
+    for (const t of seen) df.set(t, (df.get(t)||0)+1);
   }
-  const N = items.length;
-  const idf = new Map();
-  for (const [t, freq] of df)
-    idf.set(t, Math.log((N + 1) / (freq + 1)) + 1);
+  const N = items.length, idf = new Map();
+  for (const [t, freq] of df) idf.set(t, Math.log((N+1)/(freq+1))+1);
   return idf;
 }
-// Взвешенное Dice-сходство токенов (инвариантно к порядку)
 function wTokenSim(a, b, idf) {
   const A = a.split(' '), B = b.split(' ');
   let wA = 0, wB = 0;
   const mA = new Map(), mB = new Map();
-  for (const t of A) { const w = idf.get(t) || 1; mA.set(t, (mA.get(t)||0)+w); wA += w; }
-  for (const t of B) { const w = idf.get(t) || 1; mB.set(t, (mB.get(t)||0)+w); wB += w; }
-  if (!wA || !wB) return 0;
-  let inter = 0;
-  for (const [t, wa] of mA) if (mB.has(t)) inter += Math.min(wa, mB.get(t));
-  return 2 * inter / (wA + wB);
+  for (const t of A){ const w=idf.get(t)||1; mA.set(t,(mA.get(t)||0)+w); wA+=w; }
+  for (const t of B){ const w=idf.get(t)||1; mB.set(t,(mB.get(t)||0)+w); wB+=w; }
+  if (!wA||!wB) return 0;
+  let inter=0;
+  for (const [t,wa] of mA) if (mB.has(t)) inter+=Math.min(wa,mB.get(t));
+  return 2*inter/(wA+wB);
 }
 
+// =============================================================================
+// [УЛУЧШ. 7] КАНДИДАТЫ: гарантируем попадание по редким токенам
+// =============================================================================
 function buildInvIdx(items) {
   const idx = new Map();
   items.forEach((it, i) => {
     for (const tok of it._norm.split(' ')) {
-      if (tok.length < 2) continue;
+      if (tok.length < 1) continue;
       if (!idx.has(tok)) idx.set(tok, []);
       idx.get(tok).push(i);
     }
   });
   return idx;
 }
-function getCandidates(norm, idx, limit = 35, idf) {
-  const toks = norm.split(' ').filter(t => t.length > 1);
+function getCandidates(norm, idx, limit, idf) {
+  const toks = norm.split(' ').filter(t => t.length > 0);
   const scores = new Map();
   for (const t of toks) {
-    const w = idf ? (idf.get(t) || 1) : 1;
-    for (const id of (idx.get(t) || [])) scores.set(id, (scores.get(id)||0) + w);
+    const w = idf ? (idf.get(t)||1) : 1;
+    for (const id of (idx.get(t)||[])) scores.set(id, (scores.get(id)||0)+w);
   }
-  return [...scores.entries()].sort((a,b) => b[1]-a[1]).slice(0, limit).map(([id]) => id);
+  const ranked = [...scores.entries()].sort((a,b) => b[1]-a[1]).slice(0, limit).map(([id])=>id);
+  // Гарантируем кандидатов по редким токенам (IDF > порога), чтобы не потерять уникальные слова
+  if (idf) {
+    const IDF_RARE = 3.0;
+    const rareToks = toks.filter(t => (idf.get(t)||0) > IDF_RARE).slice(0, 6);
+    const rankedSet = new Set(ranked);
+    for (const t of rareToks) {
+      for (const id of (idx.get(t)||[]).slice(0, 25)) {
+        if (!rankedSet.has(id)) { ranked.push(id); rankedSet.add(id); }
+      }
+    }
+  }
+  return ranked;
 }
+
+// =============================================================================
+// [УЛУЧШ. 1,5,6,8,10] ГЛАВНАЯ ФУНКЦИЯ РАСЧЁТА СХОЖЕСТИ
+// =============================================================================
 function calcSim(name1, name2, idf) {
+  // [УЛУЧШ. 10] Числа извлекаем ДО стемминга — из строки после конвертации единиц
+  const pre1 = preNorm(name1), pre2 = preNorm(name2);
+  const nums1 = extractNums(pre1), nums2 = extractNums(pre2);
+
   const n1 = normalize(name1), n2 = normalize(name2);
   if (!n1 || !n2) return 0;
+
+  // [УЛУЧШ. 1] Числовой жёсткий стоп: разные числа = РАЗНЫЕ товары
+  let numFactor = 1.0, numBonus = 0;
+  if (nums1.length > 0 && nums2.length > 0) {
+    const s1 = new Set(nums1.map(n => n.toFixed(5))), s2 = new Set(nums2.map(n => n.toFixed(5)));
+    const common = [...s1].filter(x => s2.has(x)).length;
+    const total  = new Set([...s1, ...s2]).size;
+    const ratio  = common / total;
+    if (ratio === 0) return 0;         // ← жёсткий стоп: числа есть у обоих и ни одно не совпало
+    if (ratio < 0.5) numFactor = 0.55; // ← частичное несовпадение — сильный штраф
+    else numBonus = ratio * 0.12;
+  }
+
+  // Триграммы, LCS, токены
   const tri = triSim(n1, n2);
-  // Инвариантность к порядку: max(LCS по исходному, LCS по сортированному)
   const n1s = n1.split(' ').sort().join(' ');
   const n2s = n2.split(' ').sort().join(' ');
   const lcss = Math.max(lcsSim(n1, n2), lcsSim(n1s, n2s));
-  // TF-IDF взвешенное перекрытие токенов
   const wTok = idf ? wTokenSim(n1, n2, idf) : lcss;
-  const nums1 = extractNums(n1), nums2 = extractNums(n2);
-  let numBonus = 0, numPenalty = false;
-  if (nums1.length && nums2.length) {
-    const s1 = new Set(nums1.map(String)), s2 = new Set(nums2.map(String));
-    const ratio = [...s1].filter(x => s2.has(x)).length / new Set([...s1,...s2]).size;
-    numBonus = ratio * 0.15;
-    if (ratio < 0.5) numPenalty = true;
+
+  // [УЛУЧШ. 6] Адаптивные веса по длине названия
+  const len = (n1.split(' ').length + n2.split(' ').length) / 2;
+  const wTri = len <= 3 ? 0.25 : 0.35;
+  const wLcs = len <= 3 ? 0.20 : 0.25;
+  const wTok_ = len <= 3 ? 0.55 : 0.40;
+
+  let score = tri * wTri + lcss * wLcs + wTok * wTok_ + numBonus;
+
+  // [УЛУЧШ. 1] Применяем числовой штраф
+  score *= numFactor;
+
+  // [УЛУЧШ. 4] Штраф за конфликт типов упаковки
+  if (pkgConflict(n1, n2)) score *= 0.55;
+
+  // [УЛУЧШ. 5] Бонус/штраф за первое слово (бренд/производитель)
+  const fw1 = n1.split(' ')[0], fw2 = n2.split(' ')[0];
+  if (fw1 && fw2 && fw1.length > 2 && fw2.length > 2) {
+    const fw1Idf = idf ? (idf.get(fw1)||1) : 1;
+    const fw2Idf = idf ? (idf.get(fw2)||1) : 1;
+    const isRare1 = fw1Idf > 1.5, isRare2 = fw2Idf > 1.5;
+    if (fw1 === fw2 && isRare1) {
+      score = Math.min(1, score + 0.10); // бонус: редкий первый токен совпал
+    } else if (fw1 !== fw2 && isRare1 && isRare2) {
+      score *= 0.82; // штраф: оба первых слова редкие (бренды), но разные
+    }
   }
-  let score = tri * 0.35 + lcss * 0.25 + wTok * 0.40 + numBonus;
-  if (numPenalty) score *= 0.6;
+
   return Math.min(100, Math.round(score * 100));
 }
+
 function findCol(data, variants) {
   if (!data?.length) return null;
   const cols = Object.keys(data[0]);
   return cols.find(c => variants.some(v => c.toLowerCase().includes(v))) ?? cols[0];
 }
+
+// =============================================================================
+// ОСНОВНОЙ ОБРАБОТЧИК ВОРКЕРА
+// [УЛУЧШ. 2] Топ-5 кандидатов на товар вместо одного best
+// =============================================================================
 self.onmessage = function({ data }) {
   if (data.type !== 'run') return;
-  const { db, priceFiles, candidateLimit } = data;
+  const { db, priceFiles, candidateLimit, myFile } = data;
   const activePairs = [], sameBCPairs = [], knownPairs = [];
   const bc2key = new Map(), bc2name = new Map();
   for (const [key, val] of Object.entries(db)) {
-    const name = Array.isArray(val) ? (val[0] || '') : '';
+    const name = Array.isArray(val) ? (val[0]||'') : '';
     bc2key.set(key, key); bc2name.set(key, name);
     if (Array.isArray(val))
-      val.slice(1).forEach(s => { s = String(s).trim(); if (s) { bc2key.set(s, key); bc2name.set(s, name); } });
+      val.slice(1).forEach(s => { s=String(s).trim(); if(s){bc2key.set(s,key);bc2name.set(s,name);} });
   }
   const items = [];
   for (let fi = 0; fi < priceFiles.length; fi++) {
@@ -775,76 +988,110 @@ self.onmessage = function({ data }) {
     const bcC = findCol(f.data, BC_COLS_W), nmC = findCol(f.data, NAME_COLS_W);
     if (!bcC || !nmC) continue;
     for (const row of f.data) {
-      const bc = String(row[bcC]||'').trim(), nm = String(row[nmC]||'').trim();
-      if (bc && nm) items.push({ bc, name: nm, fi, file: f.name, _norm: normalize(nm) });
+      const bc=String(row[bcC]||'').trim(), nm=String(row[nmC]||'').trim();
+      if (bc && nm) items.push({ bc, name:nm, fi, file:f.name, _norm:normalize(nm) });
     }
   }
   if (!items.length) {
-    self.postMessage({ type: 'done', activePairs, sameBCPairs, knownPairs }); return;
+    self.postMessage({ type:'done', activePairs, sameBCPairs, knownPairs, myPairs:[] }); return;
   }
-  const jsonItems = Object.entries(db).map(([key, val]) => ({
-    bc: key, name: Array.isArray(val) ? (val[0]||key) : key,
-    fi: -1, file: 'JSON база',
-    _norm: normalize(Array.isArray(val) ? (val[0]||key) : key)
+  const jsonItems = Object.entries(db).map(([key,val]) => ({
+    bc:key, name:Array.isArray(val)?(val[0]||key):key,
+    fi:-1, file:'JSON база',
+    _norm:normalize(Array.isArray(val)?(val[0]||key):key)
   }));
   const allItems = [...items, ...jsonItems];
   const invIdx   = buildInvIdx(allItems);
   const idf      = buildIDF(allItems);
   const effectiveLimit = (candidateLimit > 0)
     ? candidateLimit
-    : Math.max(35, Math.min(300, Math.ceil(allItems.length * 0.05)));
-  const seen     = new Set();
+    : Math.max(50, Math.min(400, Math.ceil(allItems.length * 0.06)));
+  const seen = new Set();
+  const TOP_N = 5; // [УЛУЧШ. 2] сколько лучших пар брать на каждый товар
+
   for (let i = 0; i < items.length; i++) {
     if (i % 200 === 0)
-      self.postMessage({ type: 'progress', pct: Math.round(i / items.length * 100) });
+      self.postMessage({ type:'progress', pct:Math.round(i/items.length*100) });
     const a     = items[i];
     const aInDB = bc2key.has(a.bc), aKey = bc2key.get(a.bc);
-    const matchNorm = aInDB ? normalize(bc2name.get(a.bc) || a.name) : a._norm;
-    let best = null;
+    const matchNorm = aInDB ? normalize(bc2name.get(a.bc)||a.name) : a._norm;
+
+    // [УЛУЧШ. 2] Собираем topN совпадений вместо одного best
+    const topN = [];
     for (const id of getCandidates(matchNorm, invIdx, effectiveLimit, idf)) {
       const b = allItems[id];
       if (!b || b.fi === a.fi) continue;
       if (b.bc === a.bc) {
+        // Одинаковый штрихкод у разных поставщиков
         const pk = [a.bc, String(a.fi), String(b.fi)].join('|');
         if (!seen.has(pk)) {
           seen.add(pk);
-          sameBCPairs.push({ bc1: a.bc, name1: a.name, file1: a.file,
-            bc2: b.bc, name2: b.name, file2: b.file, sim: 100,
-            aInDB, bInDB: bc2key.has(b.bc), aKey, bKey: bc2key.get(b.bc) });
+          sameBCPairs.push({ bc1:a.bc, name1:a.name, file1:a.file,
+            bc2:b.bc, name2:b.name, file2:b.file, sim:100,
+            aInDB, bInDB:bc2key.has(b.bc), aKey, bKey:bc2key.get(b.bc) });
         }
         continue;
       }
       const pk = [a.bc, b.bc].sort().join('|');
       if (seen.has(pk)) continue;
       const sim = calcSim(a.name, b.name, idf);
-      if (sim >= 40 && (!best || sim > best.sim)) best = { ...b, sim };
+      if (sim >= 40) topN.push({ ...b, sim });
     }
-    if (best) {
+    // Сортируем и берём топ-N уникальных пар
+    topN.sort((x, y) => y.sim - x.sim);
+    for (const best of topN.slice(0, TOP_N)) {
       const pk = [a.bc, best.bc].sort().join('|');
-      if (!seen.has(pk)) {
-        seen.add(pk);
-        const bInDB = bc2key.has(best.bc), bKey = bc2key.get(best.bc);
-        const pair = { bc1: a.bc, name1: a.name, file1: a.file,
-                       bc2: best.bc, name2: best.name, file2: best.file,
-                       sim: best.sim, aInDB, bInDB, aKey, bKey };
-        if (aInDB && bInDB && aKey === bKey) knownPairs.push(pair);
-        else activePairs.push(pair);
-      }
+      if (seen.has(pk)) continue;
+      seen.add(pk);
+      const bInDB = bc2key.has(best.bc), bKey = bc2key.get(best.bc);
+      const pair = { bc1:a.bc, name1:a.name, file1:a.file,
+                     bc2:best.bc, name2:best.name, file2:best.file,
+                     sim:best.sim, aInDB, bInDB, aKey, bKey };
+      if (aInDB && bInDB && aKey === bKey) knownPairs.push(pair);
+      else activePairs.push(pair);
     }
   }
   activePairs.sort((a, b) => b.sim - a.sim);
   knownPairs.sort((a, b)  => b.sim - a.sim);
-  self.postMessage({ type: 'progress', pct: 100 });
-  self.postMessage({ type: 'done', activePairs, sameBCPairs, knownPairs });
+
+  // Режим «Мой прайс»
+  const myPairs = [];
+  if (myFile) {
+    const bcC = findCol(myFile.data, BC_COLS_W), nmC = findCol(myFile.data, NAME_COLS_W);
+    if (bcC && nmC) {
+      const myOrder = [];
+      for (const row of myFile.data) {
+        const bc=String(row[bcC]||'').trim(), nm=String(row[nmC]||'').trim();
+        if (bc&&nm) myOrder.push({bc,name:nm,_norm:normalize(nm)});
+      }
+      for (let mi=0; mi<myOrder.length; mi++) {
+        const m = myOrder[mi];
+        const cands = getCandidates(m._norm, invIdx, effectiveLimit, idf);
+        for (const ci of cands) {
+          const si = allItems[ci]; if (!si||si.bc===m.bc) continue;
+          const s = Math.round(calcSim(m.name, si.name, idf)); if (s < 25) continue;
+          myPairs.push({ myBC:m.bc, myName:m.name, myOrd:mi,
+            bc1:si.bc, name1:si.name, file1:si.file,
+            sim:s, aInDB:bc2key.has(si.bc), aKey:bc2key.get(si.bc) });
+        }
+      }
+      myPairs.sort((a,b) => a.myOrd-b.myOrd || b.sim-a.sim);
+    }
+  }
+  self.postMessage({ type:'progress', pct:100 });
+  self.postMessage({ type:'done', activePairs, sameBCPairs, knownPairs, myPairs });
 };
 `;
 
 let _matchWorker = null;
+let _workerUrl   = null; // ← храним URL чтобы освобождать при пересоздании
 
 function getMatchWorker() {
   if (_matchWorker) _matchWorker.terminate();
+  if (_workerUrl)   { URL.revokeObjectURL(_workerUrl); _workerUrl = null; } // ← освобождаем
   const blob = new Blob([WORKER_SRC], { type: 'application/javascript' });
-  _matchWorker = new Worker(URL.createObjectURL(blob));
+  _workerUrl    = URL.createObjectURL(blob);
+  _matchWorker  = new Worker(_workerUrl);
   _matchWorker.onmessage = handleWorkerMsg;
   _matchWorker.onerror   = err => { console.error('Worker error:', err); hideProgress(); };
   return _matchWorker;
@@ -855,56 +1102,7 @@ function runMatcher() {
   showProgress('Анализирую прайсы...');
   activePairs = []; sameBCPairs = []; knownPairs = [];
   // addedPairs сохраняем — не сбрасываем при перезапуске
-  getMatchWorker().postMessage({ type: 'run', db, priceFiles, candidateLimit: CANDIDATE_LIMIT });
-}
-
-
-function buildLocalBc2key() {
-  const m = new Map();
-  for (const [key, val] of Object.entries(db)) {
-    m.set(key, key);
-    if (Array.isArray(val)) val.slice(1).forEach(s => { s = String(s).trim(); if (s) m.set(s, key); });
-  }
-  return m;
-}
-function updatePairTags() {
-  if (!priceFiles.length) return;
-  const bc2key = buildLocalBc2key();
-  const stillActive = [];
-  for (const r of activePairs) {
-    r.aInDB = bc2key.has(r.bc1); r.bInDB = bc2key.has(r.bc2);
-    r.aKey  = bc2key.get(r.bc1); r.bKey  = bc2key.get(r.bc2);
-    if (r.aInDB && r.bInDB && r.aKey === r.bKey) knownPairs.push(r);
-    else stillActive.push(r);
-  }
-  activePairs.length = 0; activePairs.push(...stillActive);
-  for (const r of sameBCPairs) {
-    r.aInDB = bc2key.has(r.bc1); r.bInDB = bc2key.has(r.bc2);
-    r.aKey  = bc2key.get(r.bc1); r.bKey  = bc2key.get(r.bc2);
-  }
-  document.getElementById('sAll').textContent    = activePairs.length;
-  document.getElementById('sSameBC').textContent = sameBCPairs.length;
-  document.getElementById('sKnown').textContent  = knownPairs.length;
-  document.getElementById('sAdded').textContent  = addedPairs.length;
-  setView(currentView);
-}
-function addAllSameBC() {
-  const toAdd = sameBCPairs.filter(r => !r.aInDB && !r.bInDB);
-  if (!toAdd.length) { toast('Все пары уже в базе', 'info'); return; }
-  saveHistory();
-  let added = 0;
-  for (const r of toAdd) {
-    if (!db[r.bc1]) { db[r.bc1] = [r.name1]; added++; }
-  }
-  const addedSet = new Set(toAdd.map(r => r.bc1));
-  for (let i = sameBCPairs.length - 1; i >= 0; i--) {
-    const r = sameBCPairs[i];
-    if (addedSet.has(r.bc1) && !r.aInDB && !r.bInDB) sameBCPairs.splice(i, 1);
-  }
-  document.getElementById('sSameBC').textContent = sameBCPairs.length;
-  notifyChange(); renderEditor();
-  toast('Добавлено ' + added + ' групп', 'ok');
-  updatePairTags();
+  getMatchWorker().postMessage({ type: 'run', db, priceFiles, candidateLimit: CANDIDATE_LIMIT, myFile: myPriceFile });
 }
 
 function handleWorkerMsg({ data }) {
@@ -914,6 +1112,11 @@ function handleWorkerMsg({ data }) {
     activePairs = data.activePairs;
     sameBCPairs = data.sameBCPairs;
     knownPairs  = data.knownPairs;
+    myPairs     = data.myPairs || [];
+    { const ms=document.getElementById('myStat');
+      if(ms) ms.style.display=myPriceFile?'':'none'; }
+    { const mc=new Set(myPairs.map(p=>p.myBC)).size;
+      const el=document.getElementById('sMine'); if(el) el.textContent=mc; }
     updateProgress(100); hideProgress();
     document.getElementById('sAll').textContent    = activePairs.length;
     document.getElementById('sSameBC').textContent = sameBCPairs.length;
@@ -935,6 +1138,7 @@ const VS = {
   ROW_H:    33,   // примерная высота строки px
   OVERSCAN: 15,   // буфер строк выше/ниже видимой области
   keys:     [],   // текущий отфильтрованный список ключей
+  keyIndex: new Map(), // ← индекс key→absIdx для O(1) поиска в patchEditorRow
   start:    0,
   end:      0,
   ticking:  false
@@ -953,7 +1157,7 @@ function buildEditorRow(key, absIdx, dups) {
     const pCls  = isDup ? 'syn-pill dup' : 'syn-pill';
     const ttl   = isDup ? '\u26a0\ufe0f \u0414\u0443\u0431\u043b\u044c: ' + s : s;
     return '<span class="' + wCls + '"><a class="' + pCls + '" href="' + barcodeUrl(s) + '" target="_blank" title="' + escv(ttl) + '">' + esc(s) + '</a>'
-         + '<span class="syn-x" data-key="' + escv(key) + '" data-si="' + si + '" title="\u0423\u0434\u0430\u043b\u0438\u0442\u044c">\xd7</span></span>';
+         + '<span class="syn-x" data-key="' + escv(key) + '" data-si="' + si + '" title="\u0423\u0434\u0430\u043b\u0438\u0442\u044c" aria-label="\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0441\u0438\u043d\u043e\u043d\u0438\u043c ' + escv(s) + '" role="button" tabindex="0">\xd7</span></span>';
   }).join('');
 
   return '<tr id="r-' + safeId(key) + '">'
@@ -996,8 +1200,8 @@ function renderEditorVS() {
 function patchEditorRow(key) {
   const rowEl = document.getElementById('r-' + safeId(key));
   if (!rowEl) return;   // строка за пределами видимой области — пропускаем
-  const idx = VS.keys.indexOf(key);
-  if (idx === -1) return;
+  const idx = VS.keyIndex.get(key); // ← O(1) вместо indexOf O(N)
+  if (idx === undefined) return;
   const dups = findDuplicates();
   const tmp  = document.createElement('tbody');
   tmp.innerHTML = buildEditorRow(key, idx, dups);
@@ -1019,16 +1223,7 @@ function patchEditorRow(key) {
   document.getElementById('priceIn').addEventListener('change', handlePriceLoad);
   document.getElementById('xlsIn').addEventListener('change',   handleXLSImport);
 
-  // Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z
-  document.addEventListener('keydown', function(e) {
-    const inInput = e.target.matches('input,textarea,select');
-    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey && !inInput) {
-      e.preventDefault(); undo();
-    } else if ((e.ctrlKey || e.metaKey) &&
-               (e.key === 'y' || (e.key === 'z' && e.shiftKey)) && !inInput) {
-      e.preventDefault(); redo();
-    }
-  });
+  // Горячие клавиши Ctrl+Z / Ctrl+Y — обработчик в initEventListeners()
 
   const _tb = document.getElementById('eTbody');
 
@@ -1071,8 +1266,10 @@ function patchEditorRow(key) {
     const d = e.target.closest('.i-btn.del[data-key]');
     if (d) {
       const key = d.dataset.key; if (!key) return;
-      if (!confirm('Удалить группу «' + key + '»?')) return;
-      saveHistory(); delete db[key]; notifyChange(); renderEditor();
+      confirmDialog('Удалить группу «' + key + '»?', '🗑 Удаление группы').then(ok => {
+        if (!ok) return;
+        saveHistory(); delete db[key]; notifyChange(); renderEditor();
+      });
     }
   });
 
@@ -1101,6 +1298,7 @@ function switchTab(name) {
     t.classList.toggle('active', t.dataset.tab === name));
   document.querySelectorAll('.pane').forEach(p =>
     p.classList.toggle('active', p.id === 'pane-' + name));
+  if (name === 'editor') renderEditor();
 }
 
 // =============================================================================
@@ -1112,10 +1310,10 @@ async function handleJSONLoad(e) {
     const parsed = JSON.parse(await file.text());
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed))
       throw new Error('Ожидается объект, а не массив');
-    db = parsed; changes = 0; currentFileName = file.name;
+    db = parsed; _dupsCache = null; changes = 0; currentFileName = file.name;
     updateStatus(); refreshBadge(); renderEditor();
     toast('База загружена: '+Object.keys(db).length+' наим.','ok');
-    if (priceFiles.length) runMatcher();
+    if(priceFiles.length) runMatcher();
   } catch(err) { toast('Ошибка JSON: ' + err.message,'warn'); }
 }
 
@@ -1126,6 +1324,14 @@ async function saveJSON() {
 }
 
 async function saveHTML() {
+  // Закрываем открытые модалки и очищаем тосты перед снимком DOM
+  closeModal();
+  const toastRack = document.getElementById('toast-rack');
+  if (toastRack) toastRack.innerHTML = '';
+  ['kbdModal','instrModal'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('show');
+  });
   const em = document.getElementById('embeddedData');
   em.textContent = JSON.stringify(db, null, 2).replace(/<\/script>/gi, '<\\/script>');
   const html = '<!DOCTYPE html>' + document.documentElement.outerHTML;
@@ -1153,9 +1359,9 @@ async function fileSave(blob, name, mime, ext) {
 function setStatus(t)    { document.getElementById('jsonStatus').textContent = t; }
 function refreshBadge()  {
   const b = document.getElementById('badge');
-  b.textContent = changes + ' ●'; b.classList.toggle('show', changes > 0);
+  b.textContent = changes + ' \u25cf'; b.classList.toggle('show', changes > 0);
 }
-function notifyChange()  { changes++; refreshBadge(); updateStatus(); autoSave(); }
+function notifyChange()  { _dupsCache = null; changes++; refreshBadge(); updateStatus(); autoSave(); }
 
 // =============================================================================
 // HISTORY
@@ -1169,6 +1375,7 @@ function undo() {
   if (!undoStack.length) return;
   redoStack.push(JSON.stringify(db));
   db = JSON.parse(undoStack.pop());
+  _dupsCache = null;
   changes = Math.max(0, changes - 1);
   refreshBadge(); updateStatus(); renderEditor(); updateUndoUI();
 }
@@ -1176,6 +1383,7 @@ function redo() {
   if (!redoStack.length) return;
   undoStack.push(JSON.stringify(db));
   db = JSON.parse(redoStack.pop());
+  _dupsCache = null;
   changes++; refreshBadge(); updateStatus(); renderEditor(); updateUndoUI();
 }
 function updateUndoUI() {
@@ -1193,7 +1401,7 @@ function updateStatus() {
   if (!n) { setStatus('JSON не загружен'); return; }
   const s = countSynonyms();
   const base = currentFileName ? currentFileName + ' \u2014 ' : '';
-  setStatus(base + n + ' наим., ' + s + ' синонимов');
+  setStatus(base + n + ' \u043d\u0430\u0438\u043c., ' + s + ' \u0441\u0438\u043d\u043e\u043d\u0438\u043c\u043e\u0432');
 }
 
 // =============================================================================
@@ -1251,6 +1459,9 @@ function renderToolbarChips() {
     '<span class="t-chip">' + esc(f.name) + ' (' + f.data.length + ')'
     + '<span class="t-chip-x" data-remove-file="' + i + '">\xd7</span></span>'
   ).join('');
+  // Кнопка «Пересчитать» активна только если есть загруженные прайсы
+  const rb = document.getElementById('rerunBtn');
+  if (rb) rb.disabled = priceFiles.length === 0;
 }
 
 function removeFile(i) {
@@ -1378,9 +1589,8 @@ function normalize(raw) {
     .replace(/[^\wа-яёa-z0-9\s]/gi, ' ')
     .replace(/[a-z]+/gi, m => translitWord(m))
     .replace(/\s+/g, ' ').trim();
-  return expandAbbr(
-    s.split(' ').filter(w => w.length > 1 && !STOP.has(w))
-  ).join(' ');
+  const _t=expandAbbr(s.split(' ').filter(w=>w.length>1&&!STOP.has(w)));
+  return _t.map(t=>stemRu(t)).join(' ');
 }
 
 // =============================================================================
@@ -1389,41 +1599,49 @@ function normalize(raw) {
 function setView(v) {
   currentView = v;
   document.querySelectorAll('.stat').forEach(s => s.classList.toggle('active', s.dataset.v === v));
-  const aab = document.getElementById('addAllSameBCBtn');
-  if (aab) aab.style.display = v === 'samebc' ? '' : 'none';
+  const aab=document.getElementById('addAllSameBCBtn');
+  if(aab) aab.style.display=v==='samebc'?'':'none';
+  const mvt=document.getElementById('myViewToggle');
+  if(mvt) mvt.style.display=(v==='mine'&&myPriceFile)?'':'none';
+  // показываем кнопку фильтра «в базе» только для вкладок all / samebc / mine
+  const hib=document.getElementById('hideInBaseBtn');
+  const hibSep=document.getElementById('hideInBaseSep');
+  const showHib = (v==='all'||v==='samebc'||v==='mine');
+  if(hib)    hib.style.display    = showHib ? '' : 'none';
+  if(hibSep) hibSep.style.display = showHib ? '' : 'none';
   filterMatcher();
 }
 
 function getCurrentMatchList() {
-  return currentView === 'samebc' ? sameBCPairs
-       : currentView === 'known'  ? knownPairs
-       : currentView === 'added'  ? addedPairs
+  return currentView==='samebc' ? sameBCPairs
+       : currentView==='known'  ? knownPairs
+       : currentView==='added'  ? addedPairs
+       : currentView==='mine'   ? myPairs
        : activePairs;
 }
 
 function filterMatcher() {
-  const inp = document.getElementById('matchSearchInp');
-  const q   = (inp ? inp.value : '').toLowerCase().trim();
-  const list = getCurrentMatchList();
-  if (!q) {
-    renderMatcher(list, currentView);
-    document.getElementById('mStatus').textContent = '\u041f\u043e\u043a\u0430\u0437\u0430\u043d\u043e: ' + list.length + ' \u043f\u0430\u0440';
-    return;
-  }
-  const filtered = list
-    .map((r, i) => ({ ...r, _origIdx: i }))
-    .filter(r =>
-      (r.name1||'').toLowerCase().includes(q) || (r.name2||'').toLowerCase().includes(q) ||
-      (r.bc1||'').includes(q) || (r.bc2||'').includes(q) ||
-      (r.file1||'').toLowerCase().includes(q) || (r.file2||'').toLowerCase().includes(q)
-    );
-  renderMatcher(filtered, currentView);
-  document.getElementById('mStatus').textContent = '\u041d\u0430\u0439\u0434\u0435\u043d\u043e: ' + filtered.length + ' \u0438\u0437 ' + list.length;
-}
+  if (currentView==='mine') { renderMineView(); return; }
+  const inp=document.getElementById('matchSearchInp');
+  const q=(inp?inp.value:'').toLowerCase().trim();
+  let list=getCurrentMatchList();
 
-// =============================================================================
-// RENDER MATCHER
-// =============================================================================
+  // фильтр «скрыть строки в базе»
+  if (hideInBase && (currentView==='all'||currentView==='samebc')) {
+    list = list.map((r,i)=>({...r,_origIdx:i})).filter(r=>!(r.aInDB||r.bInDB));
+  } else {
+    list = list.map((r,i)=>({...r,_origIdx:i}));
+  }
+
+  if (!q) { renderMatcher(list,currentView);
+    document.getElementById('mStatus').textContent='Показано: '+list.length+' пар'; return; }
+  const filtered=list.filter(r=>
+    (r.name1||'').toLowerCase().includes(q)||(r.name2||'').toLowerCase().includes(q)||
+    (r.bc1||'').includes(q)||(r.bc2||'').includes(q)||
+    (r.file1||'').toLowerCase().includes(q)||(r.file2||'').toLowerCase().includes(q));
+  renderMatcher(filtered,currentView);
+  document.getElementById('mStatus').textContent='Найдено: '+filtered.length+' из '+list.length;
+}
 function renderMatcher(list, view) {
   const empty = document.getElementById('mEmpty');
   const table = document.getElementById('mTable');
@@ -1435,8 +1653,8 @@ function renderMatcher(list, view) {
   list.forEach((r, i) => {
     const sc  = r.sim;
     const cls = sc >= SIM_HIGH ? 'hi' : sc >= SIM_REVIEW ? 'mid' : 'lo';
-    const origI = (r._origIdx !== undefined) ? r._origIdx : i;
-    const rowAttr = clickable ? ' data-row-idx="' + origI + '" data-row-view="' + view + '" style="cursor:pointer"' : '';
+    const origI = (r._origIdx!==undefined) ? r._origIdx : i;
+    const rowAttr = clickable ? ' data-row-idx="'+origI+'" data-row-view="'+view+'" style="cursor:pointer"' : '';
     let tag, btnHtml;
     if (view === 'added') {
       tag = '<span class="tag tag-done">\u2713 \u0434\u043e\u0431\u0430\u0432\u043b\u0435\u043d\u043e</span>'; btnHtml = '';
@@ -1446,8 +1664,8 @@ function renderMatcher(list, view) {
         ? '<span style="color:#aaa;font-size:11px">\u0443\u0436\u0435 \u0432 \u0431\u0430\u0437\u0435</span>'
         : '<button class="i-btn" data-samebc="' + origI + '" title="\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c">+</button>';
     } else if (view === 'known') {
-      tag = '<span class="tag tag-known">\u0438\u0437\u0432\u0435\u0441\u0442\u043d\u044b</span>';
-      btnHtml = '<button class="i-btn" data-unlink="' + origI + '" title="Развязать">✂</button>';
+      tag='<span class="tag tag-known">известны</span>';
+      btnHtml='<button class="i-btn" data-unlink="'+origI+'" title="Развязать">✂</button>';
     } else {
       tag = r.aInDB && r.bInDB && r.aKey !== r.bKey
         ? '<span class="tag tag-mrg">\u043e\u0431\u044a\u0435\u0434\u0438\u043d\u0438\u0442\u044c</span>'
@@ -1473,8 +1691,6 @@ function renderMatcher(list, view) {
   });
   tbody.innerHTML = html;
 }
-
-function rowClick(e, i, view) { if (e.target.closest('button,a,input')) return; openModal(i, view); }
 
 function clearMatcher() {
   activePairs = []; sameBCPairs = []; knownPairs = []; addedPairs = [];
@@ -1558,7 +1774,9 @@ function confirmAction() {
 // =============================================================================
 // EDITOR
 // =============================================================================
+
 function findDuplicates() {
+  if (_dupsCache) return _dupsCache; // ← возвращаем кэш если данные не менялись
   const seen = new Map();
   for (const [key, val] of Object.entries(db)) {
     seen.set(key, (seen.get(key) || 0) + 1);
@@ -1570,6 +1788,7 @@ function findDuplicates() {
   }
   const dups = new Set();
   for (const [bc, cnt] of seen) if (cnt > 1) dups.add(bc);
+  _dupsCache = dups;
   return dups;
 }
 
@@ -1593,6 +1812,9 @@ function renderEditor() {
            (v[0] || '').toLowerCase().includes(query) ||
            v.slice(1).join(' ').toLowerCase().includes(query);
   }) : [];
+  // ← обновляем индекс O(1) для patchEditorRow
+  VS.keyIndex.clear();
+  VS.keys.forEach((k, i) => VS.keyIndex.set(k, i));
 
   let synTotal = 0;
   for (const v of Object.values(db)) if (Array.isArray(v)) synTotal += Math.max(0, v.length - 1);
@@ -1629,9 +1851,19 @@ function saveSynInput(input) {
   const val = (input.value || '').trim();
   input.style.borderColor = '';
   if (!val || !db[key]) return;
+  // Проверка 1: синоним уже есть в этой же группе
   if (db[key].includes(val)) {
+    toast('ШК «' + val + '» уже есть в этой группе', 'warn');
     input.style.borderColor = '#d93025';
-    setTimeout(() => { input.style.borderColor = ''; }, 1200);
+    setTimeout(() => { input.style.borderColor = ''; input.select(); }, 1400);
+    return;
+  }
+  // Проверка 2: ШК является главным ключом или синонимом другой группы
+  const allBCs = getAllBarcodes();
+  if (allBCs.has(val)) {
+    toast('ШК «' + val + '» уже существует в другой группе базы', 'warn');
+    input.style.borderColor = '#e8a000';
+    setTimeout(() => { input.style.borderColor = ''; input.select(); }, 1400);
     return;
   }
   saveHistory();
@@ -1668,11 +1900,18 @@ function createGroup() {
   const name   = document.getElementById('nName').value.trim();
   const mainBC = document.getElementById('nMainBC').value.trim();
   const syns   = document.getElementById('nSyns').value.split(',').map(s => s.trim()).filter(Boolean);
-  if (!mainBC) { toast('\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u0433\u043b\u0430\u0432\u043d\u044b\u0439 \u0448\u0442\u0440\u0438\u0445\u043a\u043e\u0434','warn'); return; }
+  if (!mainBC) { toast('Введите главный штрихкод','warn'); return; }
   const allBCs = getAllBarcodes();
-  if (allBCs.has(mainBC)) { toast('\u0428\u041a ' + mainBC + ' \u0443\u0436\u0435 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u0435\u0442 \u0432 \u0431\u0430\u0437\u0435','warn'); return; }
+  if (allBCs.has(mainBC)) { toast('ШК ' + mainBC + ' уже существует в базе','warn'); return; }
   const dupSyn = syns.find(s => allBCs.has(s));
-  if (dupSyn && !confirm('\u0421\u0438\u043d\u043e\u043d\u0438\u043c ' + dupSyn + ' \u0443\u0436\u0435 \u0435\u0441\u0442\u044c \u0432 \u0431\u0430\u0437\u0435.\n\u0412\u0441\u0451 \u0440\u0430\u0432\u043d\u043e \u0434\u043e\u0431\u0430\u0432\u0438\u0442\u044c?')) return;
+  if (dupSyn) {
+    confirmDialog('Синоним «' + dupSyn + '» уже есть в базе.\nВсё равно добавить?', '⚠️ Дубль синонима').then(ok => {
+      if (!ok) return;
+      saveHistory();
+      db[mainBC] = [name, ...syns]; notifyChange(); renderEditor(); clearForm(); updatePairTags();
+    });
+    return;
+  }
   saveHistory();
   db[mainBC] = [name, ...syns]; notifyChange(); renderEditor(); clearForm(); updatePairTags();
 }
@@ -1682,31 +1921,27 @@ function clearForm() {
 }
 
 function clearAll() {
-  if (!confirm('\u041e\u0447\u0438\u0441\u0442\u0438\u0442\u044c \u0432\u0441\u044e \u0431\u0430\u0437\u0443?')) return;
-  saveHistory();
-  db = {}; changes = 0; currentFileName = '';
-  document.getElementById('searchInp').value = '';
-  refreshBadge(); updateStatus(); renderEditor();
+  confirmDialog('Очистить всю базу? Это действие можно отменить через Ctrl+Z.', '🗑 Очистка базы').then(ok => {
+    if (!ok) return;
+    saveHistory();
+    db = {}; _dupsCache = null; changes = 0; currentFileName = '';
+    document.getElementById('searchInp').value = '';
+    refreshBadge(); updateStatus(); renderEditor();
+  });
 }
 
 // =============================================================================
 // EXCEL IMPORT / EXPORT
 // =============================================================================
 function exportXLSX() {
-  // Используем SheetJS (уже загружен для чтения прайсов)
-  const rows = [['Штрихкод', 'Наименование', 'Синонимы ШК']];
-  for (const [key, val] of Object.entries(db))
-    rows.push([key, Array.isArray(val) ? (val[0] || '') : '', Array.isArray(val) ? val.slice(1).join(', ') : '']);
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-  // Ширина колонок
-  ws['!cols'] = [{ wch: 20 }, { wch: 44 }, { wch: 60 }];
-  // Жирный заголовок (SheetJS поддерживает через cell style только в pro, пропускаем)
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Синонимы');
-  const buf  = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  fileSave(blob, 'synonyms_' + dateStr() + '.xlsx',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', '.xlsx');
+  const rows=[['Штрихкод','Наименование','Синонимы ШК']];
+  for (const [k,v] of Object.entries(db))
+    rows.push([k,Array.isArray(v)?(v[0]||''):'',Array.isArray(v)?v.slice(1).join(', '):'']);
+  const ws=XLSX.utils.aoa_to_sheet(rows); ws['!cols']=[{wch:20},{wch:44},{wch:60}];
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Синонимы');
+  const buf=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  fileSave(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),
+    'synonyms_'+dateStr()+'.xlsx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','.xlsx');
 }
 
 let xlsResolve = null;
@@ -1750,9 +1985,9 @@ async function handleXLSImport(e) {
       db[bc] = [name, ...syns]; added++;
     }
     notifyChange(); renderEditor();
-    alert(mode === 'skip'
-      ? '\u0414\u043e\u0431\u0430\u0432\u043b\u0435\u043d\u043e: ' + added + ', \u043f\u0440\u043e\u043f\u0443\u0449\u0435\u043d\u043e: ' + skipped
-      : '\u041e\u0431\u0440\u0430\u0431\u043e\u0442\u0430\u043d\u043e: ' + added);
+    toast(mode === 'skip'
+      ? 'Добавлено: ' + added + ', пропущено: ' + skipped
+      : 'Обработано: ' + added, 'ok');
   } catch(err) { toast('\u041e\u0448\u0438\u0431\u043a\u0430 \u0438\u043c\u043f\u043e\u0440\u0442\u0430: ' + err.message,'warn'); }
 }
 
@@ -1776,69 +2011,301 @@ function safeId(s) { try { return btoa(unescape(encodeURIComponent(s))).replace(
 function dateStr() { return new Date().toISOString().slice(0,10); }
 
 
+// =============================================================================
+// МОЙ ПРАЙС
+// =============================================================================
+function loadMyPrice(file) {
+  const ext=file.name.split('.').pop().toLowerCase();
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      let data;
+      if(ext==='csv'){
+        const res=Papa.parse(e.target.result,{header:true,skipEmptyLines:true}); data=res.data;
+      } else {
+        const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+        data=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+      }
+      myPriceFile={data,name:file.name};
+      document.getElementById('myChipName').textContent='📋 '+file.name;
+      document.getElementById('myPriceChip').style.display='';
+      toast('Мой прайс загружен: '+data.length+' строк','ok');
+      if(priceFiles.length) runMatcher();
+    } catch(err){ toast('Ошибка: '+err.message,'err'); }
+  };
+  if(ext==='csv') reader.readAsText(file,'utf-8'); else reader.readAsArrayBuffer(file);
+}
+function removeMyPrice(){
+  myPriceFile=null; myPairs=[];
+  document.getElementById('myPriceChip').style.display='none';
+  document.getElementById('myChipName').textContent='';
+  const ms=document.getElementById('myStat'); if(ms) ms.style.display='none';
+  const el=document.getElementById('sMine'); if(el) el.textContent='0';
+  if(currentView==='mine') setView('all');
+  toast('Свой прайс убран','warn');
+}
+
+// =============================================================================
+// РЕНДЕР МОЙ ПРАЙС
+// =============================================================================
+function escH(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function renderMineView(){
+  const _mTable=document.getElementById('mTable');
+  const _mEmpty=document.getElementById('mEmpty');
+  if(_mEmpty) _mEmpty.style.display='none';
+  if(_mTable) _mTable.style.display='';
+  const groups=new Map();
+  for(const p of myPairs){
+    if(!groups.has(p.myBC)) groups.set(p.myBC,{myName:p.myName,myOrd:p.myOrd,pairs:[]});
+    groups.get(p.myBC).pairs.push(p);
+  }
+  const sorted=[...groups.entries()].sort((a,b)=>a[1].myOrd-b[1].myOrd);
+  const q=(document.getElementById('matchSearchInp')?.value||'').toLowerCase().trim();
+  const filtered=q?sorted.filter(([bc,g])=>
+    bc.includes(q)||g.myName.toLowerCase().includes(q)||
+    g.pairs.some(p=>p.bc1.includes(q)||p.name1.toLowerCase().includes(q)||p.file1.toLowerCase().includes(q))
+  ):sorted;
+  let html='';
+  for(let gi=0;gi<filtered.length;gi++){
+    const [myBC,g]=filtered[gi];
+    const synCount=db[myBC]&&Array.isArray(db[myBC])?db[myBC].slice(1).length:0;
+    const newCount=g.pairs.filter(p=>!p.aInDB).length;
+    const isExp=myExpandedSet.has(myBC);
+    if(myViewMode==='A'){
+      const arrow=isExp?'▼':'▶';
+      const info=g.pairs.length
+        ?`<span style="font-size:11px;color:#888">${g.pairs.length} канд., <b style="color:${newCount?'#c07000':'#2a7a2a'}">${newCount} новых</b></span>`
+        :`<span style="font-size:11px;color:#bbb">нет кандидатов ≥40%</span>`;
+      const syn=synCount?`<span class="tag tag-known" style="margin-left:6px">синонимов: ${synCount}</span>`:'';
+      html+=`<tr class="mine-hdr mine-hdr-a${isExp?' mine-exp':''}" data-mine-bc="${escH(myBC)}">
+        <td class="td-n">${gi+1}</td><td class="td-score">${arrow}</td>
+        <td>${escH(g.myName)}${syn}</td><td><code>${escH(myBC)}</code></td>
+        <td colspan="2">${info}</td><td></td></tr>`;
+      if(isExp) html+=renderMineCands(myBC,g.pairs);
+    } else {
+      const syn=synCount
+        ?`<span class="tag tag-known" style="margin-left:6px">синонимов: ${synCount}</span>`
+        :`<span class="tag" style="background:#fff3cd;color:#856404;margin-left:6px">нет синонимов</span>`;
+      html+=`<tr class="mine-hdr">
+        <td class="td-n">${gi+1}</td>
+        <td class="td-score" style="color:#555;font-size:10px">${g.pairs.length?newCount+'↑':'—'}</td>
+        <td colspan="2"><b>${escH(g.myName)}</b> <code style="font-size:10px;color:#888">${escH(myBC)}</code>${syn}</td>
+        <td colspan="2" style="font-size:11px;color:#888">${g.pairs.length?g.pairs.length+' кандидатов':'нет кандидатов ≥40%'}</td>
+        <td></td></tr>`;
+      html+=renderMineCands(myBC,g.pairs);
+    }
+  }
+  document.getElementById('mTbody').innerHTML=html||'<tr><td colspan="7" class="empty">Нет результатов</td></tr>';
+  document.getElementById('mStatus').textContent='Показано: '+filtered.length+' из '+sorted.length+' позиций';
+}
+function renderMineCands(myBC,pairs){
+  let h='';
+  const visiblePairs = hideInBase ? pairs.filter(p=>!p.aInDB) : pairs;
+  for(let i=0;i<visiblePairs.length;i++){
+    const p=visiblePairs[i];
+    const col=p.sim>=85?'#155724':p.sim>=60?'#7d5a00':'#888';
+    const tag=p.aInDB?'<span class="tag tag-known">в базе</span>':'<span class="tag tag-new">новое</span>';
+    const btn=p.aInDB?'':`<button class="i-btn" data-mine-add="${escH(myBC)}|||${escH(p.bc1)}" title="Добавить синоним">+</button>`;
+    h+=`<tr class="mine-cand">
+      <td class="td-n" style="color:#aaa;font-size:10px;padding-left:18px">${i+1}</td>
+      <td class="td-score" style="color:${col};font-weight:600">${p.sim}%</td>
+      <td style="font-size:11px;color:#666;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escH(p.file1)}</td>
+      <td style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escH(p.name1)}</td>
+      <td><code>${escH(p.bc1)}</code></td>
+      <td>${tag}</td><td>${btn}</td></tr>`;
+  }
+  return h;
+}
+function addMineSynonym(myBC,bc1){
+  saveHistory();
+  if(!db[myBC]){const p=myPairs.find(x=>x.myBC===myBC); db[myBC]=p?[p.myName]:[myBC];}
+  if(!Array.isArray(db[myBC])) db[myBC]=[String(db[myBC])];
+  if(!db[myBC].slice(1).includes(bc1)) db[myBC].push(bc1);
+  for(const p of myPairs) if(p.bc1===bc1){p.aInDB=true;p.aKey=myBC;}
+  notifyChange(); renderMineView();
+  toast('Синоним '+bc1+' → '+myBC,'ok');
+  updatePairTags();
+}
+
+// =============================================================================
+// updatePairTags + addAllSameBC + unlinkPair
+// =============================================================================
+function buildLocalBc2key(){
+  const m=new Map();
+  for(const [key,val] of Object.entries(db)){
+    m.set(key,key);
+    if(Array.isArray(val)) val.slice(1).forEach(s=>{s=String(s).trim();if(s)m.set(s,key);});
+  }
+  return m;
+}
+function updatePairTags(){
+  if(!priceFiles.length) return;
+  const bc2key=buildLocalBc2key(), still=[], newKnown=[];
+  // ↑ собираем knownPairs заново, не дополняем — иначе пары дублируются при каждом вызове
+  for(const r of activePairs){
+    r.aInDB=bc2key.has(r.bc1);r.bInDB=bc2key.has(r.bc2);
+    r.aKey=bc2key.get(r.bc1);r.bKey=bc2key.get(r.bc2);
+    if(r.aInDB&&r.bInDB&&r.aKey===r.bKey) newKnown.push(r); else still.push(r);
+  }
+  activePairs.length=0; activePairs.push(...still);
+  knownPairs.length=0;  knownPairs.push(...newKnown); // ← заменяем целиком, не push
+  for(const r of sameBCPairs){
+    r.aInDB=bc2key.has(r.bc1);r.bInDB=bc2key.has(r.bc2);
+    r.aKey=bc2key.get(r.bc1);r.bKey=bc2key.get(r.bc2);
+  }
+  for(const p of myPairs){p.aInDB=bc2key.has(p.bc1);p.aKey=bc2key.get(p.bc1);}
+  document.getElementById('sAll').textContent=activePairs.length;
+  document.getElementById('sSameBC').textContent=sameBCPairs.length;
+  document.getElementById('sKnown').textContent=knownPairs.length;
+  document.getElementById('sAdded').textContent=addedPairs.length;
+  setView(currentView);
+}
+function addAllSameBC(){
+  const toAdd=sameBCPairs.filter(r=>!r.aInDB&&!r.bInDB);
+  if(!toAdd.length){toast('Все пары уже в базе','info');return;}
+  saveHistory(); let added=0;
+  for(const r of toAdd) if(!db[r.bc1]){db[r.bc1]=[r.name1];added++;}
+  const s=new Set(toAdd.map(r=>r.bc1));
+  for(let i=sameBCPairs.length-1;i>=0;i--){const r=sameBCPairs[i];if(s.has(r.bc1)&&!r.aInDB&&!r.bInDB)sameBCPairs.splice(i,1);}
+  document.getElementById('sSameBC').textContent=sameBCPairs.length;
+  notifyChange();renderEditor();toast('Добавлено '+added+' групп','ok');updatePairTags();
+}
+function unlinkPair(i){
+  const r=knownPairs[i];if(!r)return;
+  const key=r.aKey,arr=db[key];if(!arr||!Array.isArray(arr))return;
+  let toRemove=null;
+  if(r.bc1!==key&&arr.indexOf(r.bc1)>0)toRemove=r.bc1;
+  else if(r.bc2!==key&&arr.indexOf(r.bc2)>0)toRemove=r.bc2;
+  if(!toRemove){toast('Нельзя удалить: ни один ШК не является синонимом','warn');return;}
+  saveHistory();const idx2=arr.indexOf(toRemove);if(idx2>0)arr.splice(idx2,1);
+  knownPairs.splice(i,1);
+  document.getElementById('sKnown').textContent=knownPairs.length;
+  notifyChange();renderEditor();toast('Синоним '+toRemove+' удалён','ok');setView(currentView);
+}
+
+// =============================================================================
+// UI Utils: confirmDialog, toast, dark, autoSave, initEventListeners
+// =============================================================================
+
+// Заменяет нативный confirm() — возвращает Promise<boolean>
+let _confirmResolve = null;
+function confirmDialog(msg, title) {
+  title = title || 'Подтверждение';
+  return new Promise(resolve => {
+    _confirmResolve = resolve;
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMsg').textContent   = msg;
+    document.getElementById('confirmModal').classList.add('show');
+  });
+}
+function _confirmClose(result) {
+  document.getElementById('confirmModal').classList.remove('show');
+  if (_confirmResolve) { _confirmResolve(result); _confirmResolve = null; }
+}
 function toast(msg,type,ms){type=type||'info';ms=ms||3200;var r=document.getElementById('toast-rack');if(!r)return;var el=document.createElement('div');el.className='toast '+type;el.textContent=({ok:'✅',err:'❌',warn:'⚠️',info:'ℹ️'}[type]||'')+' '+msg;r.appendChild(el);requestAnimationFrame(function(){el.classList.add('show');});setTimeout(function(){el.classList.remove('show');setTimeout(function(){el.remove();},250);},ms);}
 function toggleDark(){var on=document.body.classList.toggle('dark');localStorage.setItem('syn_dark',on?'1':'0');var b=document.getElementById('darkBtn');if(b)b.textContent=on?'☀️ Тема':'🌙 Тема';}
 var LS_DB='syn_editor_db';
-function autoSave(){try{if(!Object.keys(db).length)return;localStorage.setItem(LS_DB,JSON.stringify(db));var d=document.getElementById('autosave-dot');if(d){d.textContent='✔ сохр.';d.classList.add('saved');setTimeout(function(){d.textContent='●';d.classList.remove('saved');},2000);}}catch(e){}}
-function autoLoad(){try{var raw=localStorage.getItem(LS_DB);if(!raw)return;var p=JSON.parse(raw);if(p&&typeof p==='object'&&!Array.isArray(p)&&Object.keys(p).length){db=p;updateStatus();refreshBadge();renderEditor();toast('База восстановлена ('+Object.keys(db).length+' наим.)','ok');}}catch(e){}}
-function checkOffline(){var b=document.getElementById('offline-banner');if(b)b.classList.toggle('show',!navigator.onLine);}
-function unlinkPair(i){
-  var r=knownPairs[i];if(!r)return;var key=r.aKey;var arr=db[key];if(!arr||!Array.isArray(arr))return;
-  var toRemove=null;
-  if(r.bc1!==key&&arr.indexOf(r.bc1)>0)toRemove=r.bc1;
-  else if(r.bc2!==key&&arr.indexOf(r.bc2)>0)toRemove=r.bc2;
-  if(!toRemove){toast('Нельзя удалить: ни один из ШК не является синонимом','warn');return;}
-  saveHistory();var idx=arr.indexOf(toRemove);if(idx>0)arr.splice(idx,1);
-  knownPairs.splice(i,1);document.getElementById('sKnown').textContent=knownPairs.length;
-  notifyChange();renderEditor();toast('Синоним '+toRemove+' удалён','ok');setView(currentView);
+function autoSave(){
+  try{
+    if(!Object.keys(db).length)return;
+    localStorage.setItem(LS_DB,JSON.stringify(db));
+    var d=document.getElementById('autosave-dot');
+    if(d){d.textContent='✔ сохр.';d.classList.add('saved');setTimeout(function(){d.textContent='●';d.classList.remove('saved');},2000);}
+  }catch(e){
+    if(e && (e.name==='QuotaExceededError'||e.code===22)){
+      toast('Автосохранение не удалось: база слишком большая для localStorage. Сохраните через «💾 Сохранить JSON»','warn',6000);
+    }
+  }
 }
+function autoLoad(){try{var raw=localStorage.getItem(LS_DB);if(!raw)return;var p=JSON.parse(raw);if(p&&typeof p==='object'&&!Array.isArray(p)&&Object.keys(p).length){db=p;_dupsCache=null;updateStatus();refreshBadge();renderEditor();toast('База восстановлена ('+Object.keys(db).length+' наим.)','ok');}}catch(e){}}
+function checkOffline(){var b=document.getElementById('offline-banner');if(b)b.classList.toggle('show',!navigator.onLine);}
+
 function initEventListeners(){
   function on(id,evt,fn){var el=document.getElementById(id);if(el)el.addEventListener(evt,fn);}
   function onAll(sel,evt,fn){document.querySelectorAll(sel).forEach(function(el){el.addEventListener(evt,fn);});}
   on('openJsonBtn','click',function(){document.getElementById('jsonIn').click();});
-  on('saveJsonBtn','click',saveJSON);on('saveHtmlBtn','click',saveHTML);
+  on('saveJsonBtn','click',saveJSON); on('saveHtmlBtn','click',saveHTML);
   on('loadPricesBtn','click',function(){document.getElementById('priceIn').click();});
-  on('undoBtn','click',undo);on('redoBtn','click',redo);on('darkBtn','click',toggleDark);
+  on('undoBtn','click',undo); on('redoBtn','click',redo); on('darkBtn','click',toggleDark);
   on('instrBtn','click',function(){var m=document.getElementById('instrModal');if(m)m.classList.toggle('show');});
   on('instrClose','click',function(){document.getElementById('instrModal').classList.remove('show');});
   on('kbdBtn','click',function(){var m=document.getElementById('kbdModal');if(m)m.classList.toggle('show');});
   on('kbdClose','click',function(){document.getElementById('kbdModal').classList.remove('show');});
   document.getElementById('kbdModal').addEventListener('click',function(e){if(e.target===this)this.classList.remove('show');});
   document.getElementById('instrModal').addEventListener('click',function(e){if(e.target===this)this.classList.remove('show');});
+  on('myPriceBtn','click',function(){document.getElementById('myPriceIn').click();});
+  on('myPriceRemove','click',removeMyPrice);
+  on('myPriceIn','change',function(e){if(e.target.files[0])loadMyPrice(e.target.files[0]);e.target.value='';});
+  on('myViewToggle','click',function(){
+    myViewMode=myViewMode==='B'?'A':'B';
+    this.textContent=myViewMode==='A'?'≡ Вид Б':'⊞ Вид А';
+    renderMineView();
+  });
   on('rerunBtn','click',function(){if(priceFiles.length)runMatcher();});
   on('addAllSameBCBtn','click',addAllSameBC);
+  on('hideInBaseBtn','click',function(){
+    hideInBase = !hideInBase;
+    const btn = document.getElementById('hideInBaseBtn');
+    if(hideInBase){
+      // фильтр включён → кнопка предлагает «показать все»
+      btn.textContent = '👁 Показать все';
+      btn.style.background = '#fff3cd';
+      btn.style.borderColor = '#ffc107';
+      btn.style.color = '#7d5a00';
+    } else {
+      // фильтр выключен → кнопка предлагает «скрыть в базе»
+      btn.textContent = '🚫 Скрыть «в базе»';
+      btn.style.background = '';
+      btn.style.borderColor = '';
+      btn.style.color = '';
+    }
+    filterMatcher();
+  });
   onAll('.tab[data-tab]','click',function(){switchTab(this.dataset.tab);});
   on('matchSearchInp','input',filterMatcher);
   onAll('.stat[data-v]','click',function(){setView(this.dataset.v);});
   var mt=document.getElementById('mTbody');
   if(mt)mt.addEventListener('click',function(e){
+    var mhdr=e.target.closest('tr.mine-hdr-a[data-mine-bc]');
+    if(mhdr){var bc=mhdr.dataset.mineBc;if(myExpandedSet.has(bc))myExpandedSet.delete(bc);else myExpandedSet.add(bc);renderMineView();return;}
+    var ma=e.target.closest('[data-mine-add]');
+    if(ma){e.stopPropagation();var pts=ma.dataset.mineAdd.split('|||');addMineSynonym(pts[0],pts[1]);return;}
     var ul=e.target.closest('[data-unlink]');if(ul){e.stopPropagation();unlinkPair(+ul.dataset.unlink);return;}
     var sb=e.target.closest('[data-samebc]');if(sb){e.stopPropagation();addSameBC(+sb.dataset.samebc);return;}
     var om=e.target.closest('[data-open-modal]');if(om){e.stopPropagation();openModal(+om.dataset.openModal,om.dataset.modalView);return;}
     var row=e.target.closest('tr[data-row-idx]');if(row&&!e.target.closest('button,a,input'))openModal(+row.dataset.rowIdx,row.dataset.rowView);
   });
   var tc=document.getElementById('tChips');if(tc)tc.addEventListener('click',function(e){var c=e.target.closest('[data-remove-file]');if(c)removeFile(+c.dataset.removeFile);});
-  on('exportBtn','click',exportXLSX);
-  on('xlsImportBtn','click',function(){document.getElementById('xlsIn').click();});
-  on('clearBtn','click',clearAll);on('createGroupBtn','click',createGroup);on('clearFormBtn','click',clearForm);
+  on('exportBtn','click',exportXLSX); on('xlsImportBtn','click',function(){document.getElementById('xlsIn').click();});
+  on('clearBtn','click',clearAll); on('createGroupBtn','click',createGroup); on('clearFormBtn','click',clearForm);
   on('searchInp','input',renderEditor);
-  on('modalCloseX','click',closeModal);on('modalCancel','click',closeModal);on('mOkBtn','click',confirmAction);
+  on('modalCloseX','click',closeModal); on('modalCancel','click',closeModal); on('mOkBtn','click',confirmAction);
   document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
-  on('xlsModalCloseX','click',function(){xlsModalResolve(null);});on('xlsOverwriteBtn','click',function(){xlsModalResolve('overwrite');});
-  on('xlsSkipBtn','click',function(){xlsModalResolve('skip');});on('xlsMergeBtn','click',function(){xlsModalResolve('merge');});
+  on('xlsModalCloseX','click',function(){xlsModalResolve(null);}); on('xlsOverwriteBtn','click',function(){xlsModalResolve('overwrite');});
+  on('xlsSkipBtn','click',function(){xlsModalResolve('skip');}); on('xlsMergeBtn','click',function(){xlsModalResolve('merge');});
   on('xlsCancelBtn','click',function(){xlsModalResolve(null);});
   document.getElementById('xlsModal').addEventListener('click',function(e){if(e.target===this)xlsModalResolve(null);});
+  // Confirm modal
+  on('confirmClose','click',function(){_confirmClose(false);});
+  on('confirmCancelBtn','click',function(){_confirmClose(false);});
+  on('confirmOkBtn','click',function(){_confirmClose(true);});
+  document.getElementById('confirmModal').addEventListener('click',function(e){if(e.target===this)_confirmClose(false);});
   document.addEventListener('keydown',function(e){
+    const inInput = e.target.matches('input,textarea,select');
     if(e.key==='Escape'){[['modal',closeModal],['xlsModal',function(){xlsModalResolve(null);}],
+      ['confirmModal',function(){_confirmClose(false);}],
       ['kbdModal',function(){document.getElementById('kbdModal').classList.remove('show');}],
       ['instrModal',function(){document.getElementById('instrModal').classList.remove('show');}]
-    ].forEach(function(p){var el=document.getElementById(p[0]);if(el&&(el.style.display!=='none'||el.classList.contains('show')))p[1]();});}
-    if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key.toLowerCase()==='z'){e.preventDefault();undo();}
-    if((e.ctrlKey||e.metaKey)&&(e.key.toLowerCase()==='y'||(e.shiftKey&&e.key.toLowerCase()==='z'))){e.preventDefault();redo();}
+    ].forEach(function(p2){var el=document.getElementById(p2[0]);if(el&&(el.style.display!=='none'||el.classList.contains('show')))p2[1]();});}
+    if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key.toLowerCase()==='z'&&!inInput){e.preventDefault();undo();}
+    if((e.ctrlKey||e.metaKey)&&(e.key.toLowerCase()==='y'||(e.shiftKey&&e.key.toLowerCase()==='z'))&&!inInput){e.preventDefault();redo();}
     if(e.altKey&&'dDвВ'.indexOf(e.key)>=0){e.preventDefault();toggleDark();}
   });
   window.addEventListener('online',function(){checkOffline();toast('Соединение восстановлено','ok');});
   window.addEventListener('offline',function(){checkOffline();toast('Нет интернета','warn',5000);});
+  window.addEventListener('beforeunload',function(e){
+    if(changes>0){e.preventDefault();e.returnValue='Есть несохранённые изменения. Закрыть вкладку?';return e.returnValue;}
+  });
   checkOffline();
 }
 

@@ -1,0 +1,1847 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Редактор синонимов ШК v10</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    input[type=file] { display: none; }
+
+    /* ── Base ── */
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 13px;
+      background: #f0f0f0;
+      color: #1f1f1f;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Toolbar ── */
+    .toolbar {
+      background: #217346;
+      color: white;
+      padding: 5px 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+    .toolbar-title { font-size: 14px; font-weight: 600; padding-right: 4px; white-space: nowrap; }
+    .toolbar-sep   { width: 1px; height: 20px; background: rgba(255,255,255,0.35); margin: 0 3px; flex-shrink: 0; }
+    .t-btn {
+      background: transparent; color: white;
+      border: 1px solid transparent;
+      padding: 3px 10px; font-size: 12px; font-family: inherit;
+      cursor: pointer; border-radius: 2px; white-space: nowrap;
+    }
+    .t-btn:hover { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.4); }
+    .t-btn.accent { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.12); }
+    .t-btn.accent:hover { background: rgba(255,255,255,0.25); }
+    .toolbar-status {
+      font-size: 11px; color: rgba(255,255,255,0.85);
+      flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .inp-bc.dup-inp { color: #721c24 !important; font-weight: 600; }
+    .toolbar-badge {
+      background: #d4a017; color: white;
+      padding: 1px 7px; border-radius: 10px;
+      font-size: 11px; font-weight: 600; display: none; white-space: nowrap;
+    }
+    .toolbar-badge.show { display: inline-block; }
+    .t-chips { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+    .t-chip {
+      background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35);
+      color: white; padding: 1px 7px; border-radius: 10px;
+      font-size: 11px; display: flex; align-items: center; gap: 4px;
+    }
+    .t-chip-x { cursor: pointer; opacity: .75; font-size: 12px; line-height: 1; }
+    .t-chip-x:hover { opacity: 1; }
+
+    /* ── Tabs ── */
+    .tab-bar { background: #185c38; display: flex; padding: 0 8px; flex-shrink: 0; }
+    .tab {
+      color: rgba(255,255,255,0.65); padding: 5px 16px; cursor: pointer;
+      font-size: 12px; font-weight: 500; border-bottom: 2px solid transparent;
+      white-space: nowrap; user-select: none;
+    }
+    .tab.active { color: white; border-bottom-color: white; }
+    .tab:hover:not(.active) { color: rgba(255,255,255,0.9); background: rgba(0,0,0,0.1); }
+
+    /* ── Workspace ── */
+    .workspace { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .pane { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+    .pane.active { display: flex; }
+
+    /* ── Sub-toolbar ── */
+    .sub-bar {
+      background: #f8f8f8; border-bottom: 1px solid #d0d0d0;
+      padding: 4px 8px; display: flex; align-items: center; gap: 4px;
+      flex-wrap: wrap; flex-shrink: 0;
+    }
+    .s-btn {
+      background: white; border: 1px solid #c0c0c0;
+      padding: 3px 9px; font-size: 12px; font-family: inherit;
+      cursor: pointer; border-radius: 2px; white-space: nowrap;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .s-btn:hover:not(:disabled) { background: #e8f4ec; border-color: #217346; color: #155724; }
+    .s-btn:disabled { color: #aaa; cursor: default; background: #f5f5f5; }
+    .s-btn.danger:hover:not(:disabled) { background: #fce8e6; border-color: #d93025; color: #d93025; }
+    .s-btn.primary { background: #217346; color: white; border-color: #185c38; }
+    .s-btn.primary:hover:not(:disabled) { background: #185c38; }
+    .sub-sep { width: 1px; height: 22px; background: #d0d0d0; margin: 0 2px; flex-shrink: 0; }
+    .sub-label { font-size: 11px; color: #666; padding: 0 2px; white-space: nowrap; }
+
+    /* ── New-group form ── */
+    .new-row {
+      background: #f0f7f2; border-bottom: 1px solid #b8d8c8;
+      padding: 4px 8px; display: flex; align-items: center; gap: 4px;
+      flex-wrap: wrap; flex-shrink: 0;
+    }
+
+    /* ── Stats row ── */
+    .stats-row {
+      background: white; border-bottom: 1px solid #d0d0d0;
+      padding: 5px 12px; display: none; gap: 20px; align-items: center; flex-shrink: 0;
+    }
+    .stats-row.show { display: flex; }
+    .stat {
+      display: flex; flex-direction: column; align-items: center;
+      cursor: pointer; padding: 3px 12px;
+      border-bottom: 2px solid transparent; border-radius: 2px 2px 0 0; user-select: none;
+    }
+    .stat:hover { background: #f0f7f2; }
+    .stat.active { border-bottom-color: #217346; }
+    .stat.active .stat-val { color: #217346; }
+    .stat-val { font-size: 18px; font-weight: 600; color: #444; line-height: 1.2; }
+    .stat-lbl { font-size: 10px; color: #888; text-transform: uppercase; white-space: nowrap; }
+
+    /* ── Progress ── */
+    .progress-row { display: none; padding: 6px 12px; background: white; border-bottom: 1px solid #d0d0d0; flex-shrink: 0; }
+    .progress-row.show { display: block; }
+    .progress-lbl { font-size: 11px; color: #555; margin-bottom: 3px; }
+    .progress-track { height: 4px; background: #e0e0e0; border-radius: 2px; }
+    .progress-fill { height: 100%; width: 0%; background: #217346; border-radius: 2px; transition: width 0.2s; }
+
+    /* ── Table ── */
+    .tbl-wrap { flex: 1; overflow: auto; background: white; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th {
+      background: #dce6f1; border: 1px solid #b0c4de;
+      padding: 4px 7px; text-align: left; font-weight: 600;
+      position: sticky; top: 0; z-index: 2; white-space: nowrap; user-select: none;
+    }
+    td { border: 1px solid #d8d8d8; padding: 3px 7px; vertical-align: middle; background: white; }
+    .td-n { background: #f0f0f0 !important; width: 32px; text-align: center; color: #999; font-size: 11px; }
+    th.td-n { background: #dce6f1 !important; }
+    .td-mono { font-family: 'Courier New', monospace; font-size: 11px; }
+    .td-score { text-align: center; width: 46px; font-weight: 700; white-space: nowrap; }
+    .hi  { color: #155724; }
+    .mid { color: #7d5a00; }
+    .lo  { color: #721c24; }
+
+    /* ── Pair rows — белый фон, жирный разделитель между парами ── */
+    tr.pair-a td { background: white; border-top: 2px solid #5a9e7a !important; }
+    tr.pair-b td { background: white; border-top: none !important; }
+    tr.pair-a:hover td,
+    tr.pair-b:hover td { background: #f0f7f2 !important; cursor: pointer; }
+    .src-lbl { font-size: 10px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; display: block; }
+
+    /* ── Inputs in cells ── */
+    .inp {
+      width: 100%; height: 22px; padding: 0 5px;
+      border: 1px solid #c0c0c0; font-size: 12px; font-family: inherit;
+      background: white; border-radius: 1px;
+    }
+    .inp:focus { outline: none; border-color: #217346; box-shadow: 0 0 0 2px rgba(33,115,70,.12); }
+    .inp.mono { font-family: 'Courier New', monospace; font-size: 11px; }
+
+    /* ── Row actions ── */
+    .acts { display: flex; gap: 2px; justify-content: center; }
+    .i-btn { background: none; border: 1px solid transparent; padding: 1px 5px; cursor: pointer; font-size: 13px; border-radius: 2px; line-height: 1.4; }
+    .i-btn:hover { background: #e8f4ec; border-color: #217346; }
+    .i-btn.del:hover { background: #fce8e6; border-color: #d93025; }
+
+    /* ── Tags ── */
+    .tag { display: inline-block; padding: 1px 5px; border-radius: 2px; font-size: 10px; font-weight: 600; border: 1px solid; white-space: nowrap; }
+    .tag-new   { background: #e8f4ec; color: #155724; border-color: #a8d5b5; }
+    .tag-syn   { background: #fff3cd; color: #7d5a00; border-color: #ffc107; }
+    .tag-mrg   { background: #e8f0fe; color: #1a3c80; border-color: #a8c4f5; }
+    .tag-bc    { background: #f0f0f0; color: #555;    border-color: #ccc; }
+    .tag-done  { background: #e8f4ec; color: #155724; border-color: #a8d5b5; }
+    .tag-known { background: #f3e8ff; color: #5b21b6; border-color: #c4b5fd; }
+
+    /* ── Synonym pills in editor ── */
+    .syn-cell { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; min-height: 24px; padding: 1px 0; }
+    .syn-wrap { display: inline-flex; align-items: stretch; border-radius: 2px; overflow: hidden; border: 1px solid #b8d0f5; }
+    .syn-wrap.dup { border-color: #f5a9a2; }
+    .syn-pill {
+      display: inline-flex; align-items: center;
+      background: #e8f0fe; border: none;
+      padding: 1px 4px 1px 6px;
+      font-size: 11px; font-family: 'Courier New', monospace;
+      text-decoration: none; color: #1a3c80; white-space: nowrap;
+      transition: background .1s;
+    }
+    .syn-pill:hover { background: #cfe0fb; }
+    .syn-wrap.dup .syn-pill { background: #fce8e6; color: #721c24; }
+    .syn-wrap.dup .syn-pill:hover { background: #f8d0cc; }
+    .syn-x {
+      cursor: pointer; color: #fff; font-size: 11px; line-height: 1;
+      padding: 1px 5px; background: #8aabdc; border: none;
+      display: inline-flex; align-items: center;
+      transition: background .1s; user-select: none;
+    }
+    .syn-x:hover { background: #d93025; }
+    .syn-wrap.dup .syn-x { background: #c8857e; }
+    .syn-wrap.dup .syn-x:hover { background: #d93025; }
+    .inp-add-syn {
+      height: 20px; padding: 0 5px; width: 110px;
+      border: 1px dashed #aaa; font-size: 11px; font-family: 'Courier New', monospace;
+      border-radius: 2px; background: #fafafa; color: #333; transition: border-color .15s;
+    }
+    .inp-add-syn:focus { outline: none; border-color: #217346; border-style: solid; }
+    /* Main BC link in editor */
+    .bc-link { font-family: 'Courier New', monospace; font-size: 11px; font-weight: 600; color: #1a3c80; text-decoration: none; }
+    .bc-link:hover { text-decoration: underline; color: #155724; }
+
+    /* ── Empty state ── */
+    .empty { padding: 60px 20px; text-align: center; color: #aaa; }
+    .empty-ico { font-size: 42px; margin-bottom: 10px; }
+    .empty-ttl { font-size: 16px; color: #888; margin-bottom: 6px; }
+    .empty-sub { font-size: 12px; }
+
+    /* ── Search ── */
+    .search-inp { height: 24px; padding: 0 8px; border: 1px solid #c0c0c0; font-size: 12px; font-family: inherit; min-width: 200px; max-width: 320px; flex: 1; }
+    .search-inp:focus { outline: none; border-color: #217346; }
+
+    /* ── Status bar ── */
+    .status-bar { background: #f0f0f0; border-top: 1px solid #c8c8c8; padding: 2px 12px; font-size: 11px; color: #666; display: flex; gap: 20px; flex-shrink: 0; }
+
+    /* ── Modal (ШИРЕ) ── */
+    .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 100; align-items: center; justify-content: center; }
+    .modal-bg.show { display: flex; }
+    .modal { background: white; width: 700px; max-width: 96vw; border-radius: 3px; box-shadow: 0 8px 40px rgba(0,0,0,.35); }
+    .modal-hdr {
+      background: #217346; color: white; padding: 9px 16px;
+      font-size: 13px; font-weight: 600;
+      display: flex; align-items: center; justify-content: space-between;
+      border-radius: 3px 3px 0 0;
+    }
+    .modal-x { background: none; border: none; color: white; font-size: 18px; cursor: pointer; line-height: 1; }
+    .modal-body { padding: 16px; }
+    .modal-score { font-size: 36px; font-weight: 700; text-align: center; margin-bottom: 10px; }
+    .modal-action { background: #f0f7f2; border: 1px solid #b8d8c8; border-radius: 2px; padding: 8px 12px; font-size: 12px; color: #155724; margin-bottom: 12px; }
+    /* Modal pair table — строки друг под другом */
+    .modal-pair { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .modal-pair th { background: #dce6f1; border: 1px solid #b0c4de; padding: 4px 8px; font-weight: 600; text-align: left; }
+    .modal-pair td { border: 1px solid #d8d8d8; padding: 5px 8px; vertical-align: middle; background: white; }
+    .modal-pair tr.m-a td { border-top: 2px solid #5a9e7a !important; }
+    .modal-pair tr.m-b td { border-top: none !important; background: #f8fbf9; }
+    .modal-ftr { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 16px; border-top: 1px solid #e8e8e8; }
+    .m-btn { padding: 5px 18px; border-radius: 2px; font-size: 13px; font-family: inherit; cursor: pointer; border: 1px solid; }
+    .m-btn.cancel { background: white; border-color: #c0c0c0; color: #444; }
+    .m-btn.cancel:hover { background: #f5f5f5; }
+    .m-btn.ok { background: #217346; border-color: #185c38; color: white; }
+    .m-btn.ok:hover { background: #185c38; }
+
+    /* ── Дубль-предупреждение ── */
+    .dup-warn { background: #fce8e6; border: 1px solid #f5a9a2; border-radius: 2px; padding: 4px 10px; font-size: 11px; color: #721c24; margin-top: 4px; display: none; }
+    .dup-warn.show { display: block; }
+    :root{--bg:#f0f0f0;--surface:#fff;--text:#1f1f1f;--mute:#666;--border:#d0d0d0;--primary:#217346;--th:#dce6f1;--th-b:#b0c4de;--hover:#f0f7f2;--sub:#f8f8f8;}
+    body.dark{--bg:#1a1a1a;--surface:#252525;--text:#e8e8e8;--mute:#999;--border:#3a3a3a;--primary:#2d9a5f;--th:#1e2a3a;--th-b:#2d4a6a;--hover:#1e2e25;--sub:#1e1e1e;}
+    body.dark{background:var(--bg);color:var(--text);}
+    body.dark td{background:var(--surface)!important;color:var(--text)!important;border-color:var(--border)!important;}
+    body.dark th{background:var(--th)!important;color:var(--text)!important;border-color:var(--th-b)!important;}
+    body.dark .sub-bar,body.dark .new-row{background:var(--sub);border-color:var(--border);}
+    body.dark .new-row{background:#1e2e25;border-color:#2d5040;}
+    body.dark .stats-row,body.dark .progress-row{background:var(--surface);border-color:var(--border);}
+    body.dark .progress-track{background:#3a3a3a;}
+    body.dark .s-btn{background:#2e2e2e;border-color:#444;color:var(--text);}
+    body.dark .s-btn:hover:not(:disabled){background:var(--hover);border-color:var(--primary);color:#7dffb3;}
+    body.dark .inp,body.dark .search-inp,body.dark .inp-add-syn{background:#2e2e2e;border-color:#555;color:var(--text);}
+    body.dark .tbl-wrap{background:var(--surface);}
+    body.dark .status-bar{background:#141414;border-color:#333;color:var(--mute);}
+    body.dark .modal{background:#2a2a2a;color:var(--text);}
+    body.dark .modal-pair td{background:#2a2a2a!important;color:var(--text)!important;}
+    body.dark .modal-pair tr.m-b td{background:#222!important;}
+    body.dark .modal-ftr{border-color:#3a3a3a;}
+    body.dark .m-btn.cancel{background:#333;border-color:#555;color:var(--text);}
+    body.dark .empty{color:#666;}
+    body.dark .syn-pill{background:#1e2a3a;color:#8ab4f8;}
+    body.dark .syn-x{background:#2d4a6a;}
+    body.dark tr.pair-a:hover td,body.dark tr.pair-b:hover td{background:var(--hover)!important;}
+    #mTable thead th{height:36px;white-space:nowrap;vertical-align:middle;}
+    #eTable{table-layout:fixed;width:100%;}
+    #eTable th:nth-child(2),#eTable td:nth-child(2){width:220px;min-width:220px;max-width:220px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+    #toast-rack{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column-reverse;gap:8px;pointer-events:none;}
+    .toast{background:#222;color:#fff;padding:9px 16px;border-radius:4px;font-size:12px;font-family:inherit;box-shadow:0 4px 16px rgba(0,0,0,.3);opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;pointer-events:all;max-width:340px;word-break:break-word;}
+    .toast.show{opacity:1;transform:translateY(0);}
+    .toast.ok{background:#155724;border-left:3px solid #2d9a5f;}
+    .toast.err{background:#721c24;border-left:3px solid #d93025;}
+    .toast.warn{background:#7d5a00;border-left:3px solid #ffc107;}
+    .toast.info{background:#1a3c80;border-left:3px solid #4a7adc;}
+    #offline-banner{display:none;background:#721c24;color:#fff;text-align:center;font-size:12px;padding:4px 12px;flex-shrink:0;}
+    #offline-banner.show{display:block;}
+    #autosave-dot{font-size:10px;color:rgba(255,255,255,.45);white-space:nowrap;flex-shrink:0;}
+    #autosave-dot.saved{color:#7dffb3;}
+    .kbd-table{width:100%;border-collapse:collapse;font-size:12px;}
+    .kbd-table td{padding:5px 8px;border-bottom:1px solid #e8e8e8;}
+    body.dark .kbd-table td{border-color:#333;}
+    kbd{display:inline-block;padding:1px 6px;border-radius:3px;background:#f0f0f0;border:1px solid #bbb;font-family:monospace;font-size:11px;color:#333;}
+    body.dark kbd{background:#333;border-color:#555;color:#ddd;}
+    .instr-body{padding:4px 16px 12px;font-size:12px;line-height:1.6;max-height:70vh;overflow-y:auto;}
+    .instr-body h3{font-size:12px;font-weight:700;margin:12px 0 4px;color:var(--primary);}
+    .instr-body p,.instr-body li{margin:2px 0;}
+    .instr-body ol,.instr-body ul{padding-left:18px;margin:2px 0 6px;}
+    .instr-badge{display:inline-block;padding:1px 7px;border-radius:3px;font-size:10px;font-weight:600;vertical-align:middle;}
+    .ib-syn{background:#e6f4ea;color:#155724;}.ib-new{background:#fff3cd;color:#856404;}
+    .ib-mrg{background:#cfe2ff;color:#084298;}.ib-knw{background:#d1ecf1;color:#0c5460;}.ib-bc{background:#e9d5ff;color:#4c1d95;}
+    body.dark .instr-body h3{color:#7dffb3;}
+    .s-btn-green{background:#e6f4ea;border-color:#2d9a5f;color:#155724;font-weight:600;}
+    .s-btn-green:hover:not(:disabled){background:#d0ead5;border-color:#155724;}
+    body.dark .s-btn-green{background:#1a3328;border-color:#2d9a5f;color:#7dffb3;}
+    body.dark .s-btn-green:hover:not(:disabled){background:#1e3d30;border-color:#4dbb80;}
+    @media(max-width:900px){.toolbar-status{display:none;}}
+    @media(max-width:640px){.t-btn,.s-btn{padding:3px 6px;font-size:11px;}.tab{padding:5px 10px;font-size:11px;}}
+
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════ TOOLBAR ════════════════════ -->
+<header class="toolbar">
+  <span class="toolbar-title">📊 Редактор синонимов ШК <span style="opacity:.5;font-size:10px;font-weight:400">v10</span></span>
+  <div class="toolbar-sep"></div>
+  <button class="t-btn" id="openJsonBtn">📂 Открыть JSON</button>
+  <button class="t-btn" id="saveJsonBtn">💾 Сохранить JSON</button>
+  <button class="t-btn" id="undoBtn"  disabled title="Отменить (Ctrl+Z)">↩ Отменить</button>
+  <button class="t-btn" id="redoBtn"  disabled title="Повторить (Ctrl+Y)">↪ Повторить</button>
+  <div class="toolbar-sep"></div>
+  <button class="t-btn" id="saveHtmlBtn">📄 Сохранить приложение</button>
+  <input type="file" id="jsonIn" accept=".json">
+  <span class="toolbar-badge" id="badge"></span>
+  <div class="toolbar-sep"></div>
+  <button class="t-btn accent" id="loadPricesBtn">📂 Загрузить прайсы</button>
+  <input type="file" id="priceIn" accept=".csv,.xlsx,.xls" multiple>
+  <div class="t-chips" id="tChips"></div>
+  <div class="toolbar-sep"></div>
+  <div class="toolbar-sep"></div>
+  <button class="t-btn" id="instrBtn" title="Инструкция">📖 Инструкция</button>
+  <button class="t-btn" id="darkBtn" title="Тёмная тема (Alt+D)">🌙 Тема</button>
+  <button class="t-btn" id="kbdBtn" title="Горячие клавиши">⌨️</button>
+  <span id="autosave-dot" title="Автосохранение">●</span>
+  <span class="toolbar-status" id="jsonStatus">JSON не загружен</span>
+</header>
+<div id="offline-banner">⚠️ Нет интернета — XLSX/PapaParse могут не работать.</div>
+
+<!-- ════════════════════ TABS ════════════════════ -->
+<nav class="tab-bar">
+  <div class="tab active" data-tab="matcher">🔍 Поиск синонимов</div>
+  <div class="tab" data-tab="editor">✏️ Редактор базы</div>
+</nav>
+
+<!-- ════════════════════ WORKSPACE ════════════════════ -->
+<div class="workspace">
+
+  <!-- ══ MATCHER ══ -->
+  <div class="pane active" id="pane-matcher">
+    <div class="sub-bar" id="matcherSubBar" style="display:none">
+      <span class="sub-label">Поиск:</span>
+      <input class="search-inp" id="matchSearchInp" placeholder="🔍 Поиск по штрихкоду / названию..." style="flex:1;max-width:400px" disabled>
+      <button class="s-btn s-btn-green" id="addAllSameBCBtn" title="Добавить все пары = ШК которых нет в базе" style="display:none">➕ Добавить все новые</button>
+      <button class="s-btn" id="rerunBtn" title="Полный пересчёт">🔄 Пересчитать</button>
+    </div>
+    <div class="progress-row" id="progressRow">
+      <div class="progress-lbl" id="progressLbl">Загрузка...</div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+    <div class="stats-row" id="statsRow">
+      <div class="stat active"    data-v="all">
+        <div class="stat-val" id="sAll">0</div><div class="stat-lbl">Все совпадения</div></div>
+      <div class="stat" data-v="samebc">
+        <div class="stat-val" id="sSameBC">0</div><div class="stat-lbl">Одинак. ШК</div></div>
+      <div class="stat"  data-v="known">
+        <div class="stat-val" id="sKnown">0</div><div class="stat-lbl">Синонимов в базе</div></div>
+      <div class="stat"  data-v="added">
+        <div class="stat-val" id="sAdded">0</div><div class="stat-lbl">Добавлено</div></div>
+    </div>
+    <div class="tbl-wrap">
+      <div class="empty" id="mEmpty">
+        <div class="empty-ico">🔍</div>
+        <div class="empty-ttl">Загрузите прайсы для сравнения</div>
+        <div class="empty-sub">Нажмите «Загрузить прайсы» в шапке — система найдёт совпадения по названиям</div>
+      </div>
+      <!-- Шапка таблицы: товар 1 и товар 2 — в СТРОКАХ друг под другом -->
+      <table id="mTable" style="display:none">
+        <thead>
+          <tr>
+            <th class="td-n">#</th>
+            <th class="td-score">%</th>
+            <th style="width:105px">Источник</th>
+            <th>Название</th>
+            <th style="width:140px">Штрихкод</th>
+            <th style="width:68px">Тип</th>
+            <th style="width:44px"></th>
+          </tr>
+        </thead>
+        <tbody id="mTbody"></tbody>
+      </table>
+    </div>
+    <div class="status-bar"><span id="mStatus">Готов</span></div>
+  </div>
+
+  <!-- ══ EDITOR ══ -->
+  <div class="pane" id="pane-editor">
+    <div class="sub-bar">
+      <button class="s-btn" id="exportBtn"  disabled>📊 Excel</button>
+      <button class="s-btn" id="xlsImportBtn">📥 Импорт Excel</button>
+      <input type="file" id="xlsIn" accept=".xlsx,.xls">
+      <div class="sub-sep"></div>
+      <button class="s-btn danger" id="clearBtn"  disabled>🗑 Очистить</button>
+      <div class="sub-sep"></div>
+      <input class="search-inp" id="searchInp" placeholder="🔍 Поиск по ШК / названию..." disabled>
+    </div>
+    <div class="new-row">
+      <span class="sub-label">Новая группа:</span>
+      <input class="inp"      id="nName"   placeholder="Название товара"         style="width:230px">
+      <input class="inp mono" id="nMainBC" placeholder="Главный ШК"             style="width:148px">
+      <input class="inp mono" id="nSyns"   placeholder="Синонимы через запятую" style="width:265px">
+      <button class="s-btn primary" id="createGroupBtn">➕ Добавить</button>
+      <button class="s-btn"         id="clearFormBtn">Сбросить</button>
+    </div>
+    <div class="tbl-wrap">
+      <div class="empty" id="eEmpty">
+        <div class="empty-ico">📦</div>
+        <div class="empty-ttl">База пуста</div>
+        <div class="empty-sub">Загрузите JSON или создайте группы вручную</div>
+      </div>
+      <table id="eTable" style="display:none;table-layout:fixed">
+        <thead>
+          <tr>
+            <th class="td-n">#</th>
+            <th style="width:220px;min-width:220px;max-width:220px">Название</th>
+            <th style="width:165px">Главный ШК</th>
+            <th>Синонимы ШК <span style="font-weight:400;color:#888;font-size:10px">(Enter для добавления)</span></th>
+            <th style="width:40px"></th>
+          </tr>
+        </thead>
+        <tbody id="eTbody"></tbody>
+      </table>
+    </div>
+    <div class="status-bar">
+      <span id="eStatus">Наименований: 0</span>
+      <span id="eDupStatus" style="color:#d93025;display:none"></span>
+    </div>
+  </div>
+
+</div><!-- /workspace -->
+
+<!-- ════════════════════ MODAL (ШИРЕ) ════════════════════ -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <span id="mTitle">Подтверждение</span>
+      <button class="modal-x" id="modalCloseX">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-score" id="mScore"></div>
+      <div class="modal-action" id="mAction"></div>
+      <table class="modal-pair">
+        <thead>
+          <tr>
+            <th style="width:90px">Источник</th>
+            <th>Название</th>
+            <th style="width:150px">Штрихкод</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="m-a"><td id="mSrc1"></td><td id="mName1"></td><td class="td-mono" id="mBC1"></td></tr>
+          <tr class="m-b"><td id="mSrc2"></td><td id="mName2"></td><td class="td-mono" id="mBC2"></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="modal-ftr">
+      <button class="m-btn cancel" id="modalCancel">Отмена</button>
+      <button class="m-btn ok" id="mOkBtn" >Подтвердить</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════ XLS IMPORT MODAL ════════════════════ -->
+<div class="modal-bg" id="xlsModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-hdr">
+      <span>Режим импорта Excel</span>
+      <button class="modal-x" id="xlsModalCloseX">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px">
+      <p id="xlsModalMsg" style="margin-bottom:16px;font-size:13px;line-height:1.5"></p>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="m-btn ok"     id="xlsOverwriteBtn">♻️ Перезаписать существующие</button>
+        <button class="m-btn"        id="xlsSkipBtn"      style="background:#6c757d;color:white">⏭ Пропустить существующие</button>
+        <button class="m-btn"        id="xlsMergeBtn"     style="background:#0d6efd;color:white">🔀 Объединить синонимы</button>
+        <button class="m-btn cancel" id="xlsCancelBtn" style="margin-top:4px">Отмена</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script id="embeddedData" type="application/json">null</script>
+<div id="toast-rack"></div>
+<div class="modal-bg" id="kbdModal"><div class="modal" style="width:420px"><div class="modal-hdr"><span>⌨️ Горячие клавиши</span><button class="modal-x" id="kbdClose">✕</button></div><div class="modal-body" style="padding:12px 16px"><table class="kbd-table"><tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>Отменить</td></tr><tr><td><kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>Повторить</td></tr><tr><td><kbd>Alt</kbd>+<kbd>D</kbd></td><td>Тёмная тема</td></tr><tr><td><kbd>Esc</kbd></td><td>Закрыть окно</td></tr></table></div></div></div>
+<div class="modal-bg" id="instrModal"><div class="modal" style="width:580px;max-width:96vw"><div class="modal-hdr"><span>📖 Инструкция по работе</span><button class="modal-x" id="instrClose">✕</button></div><div class="instr-body"><h3>🎯 Цель</h3><p>Связать штрихкоды одного товара у разных поставщиков в группы синонимов.</p><h3>🚀 Старт</h3><ol><li><b>Загрузить JSON</b> — текущая база.</li><li><b>Прайсы</b> — загрузить все прайсы сразу.</li><li>Дождаться анализа.</li></ol><h3>📂 Порядок вкладок</h3><ol><li><b>= ШК</b> — одинаковый ШК у разных поставщиков. <b>➕ Добавить все новые</b> для массового добавления.</li><li><b>Синонимы</b> — один товар уже в базе. Сверху вниз по %.</li><li><b>Объединить</b> — слияние двух групп. Необратимо без Ctrl+Z.</li><li><b>Новое</b> — создать группу кликом по строке.</li></ol><h3>🔄 Пересчитать</h3><p>Полный анализ для поиска новых пар после серии добавлений.</p><h3>✂️ Развязать</h3><p>Вкладка <b>Синонимов в базе</b> — кнопка ✂ удаляет синоним из группы.</p><h3>💡 Советы</h3><ul><li>Сначала добавляйте новые группы.</li><li>Перед созданием группы ищите ШК в строке поиска.</li><li>Сохраняйте JSON после каждого этапа.</li></ul></div></div></div>
+
+<script>
+"use strict";
+// =============================================================================
+// STATE
+// =============================================================================
+let db      = {};
+let changes = 0;
+let currentFileName = '';
+let priceFiles  = [];
+let activePairs = [];
+let sameBCPairs = [];
+let knownPairs  = [];
+let addedPairs  = [];
+let currentView = 'all';
+let CANDIDATE_LIMIT = 0; // 0 = авторасчёт (5% словаря, диапазон 35–300); >0 = жёсткий лимит
+let pending     = null;
+
+const HISTORY_LIMIT = 50;
+let undoStack = [], redoStack = [];
+
+const BC_COLS   = ['штрихкод','штрих-код','barcode','шк','ean','код'];
+const NAME_COLS = ['название','наименование','name','товар','продукт','наим'];
+const SYN_COLS  = ['синонимы','synonyms','синоним','synonym'];
+const SIM_MIN = 40, SIM_REVIEW = 60, SIM_HIGH = 85;
+
+// =============================================================================
+// ① WEB WORKER — весь матчинг вынесен из главного потока
+// =============================================================================
+const WORKER_SRC = `
+"use strict";
+const TL = [
+  ['ight','айт'],['tion','шн'],['ough','оф'],['sch','ш'],['tch','ч'],
+  ['all','ол'],['ing','инг'],['igh','ай'],['ull','ул'],['oor','ур'],
+  ['alk','ок'],['awn','он'],['sh','ш'],['ch','ч'],['zh','ж'],
+  ['kh','х'],['ph','ф'],['th','т'],['wh','в'],['ck','к'],['qu','кв'],['ts','ц'],['tz','ц'],
+  ['oo','у'],['ee','и'],['ea','и'],['ui','у'],['ew','ю'],
+  ['aw','о'],['ow','оу'],['oi','ой'],['oy','ой'],['ai','ей'],['ay','ей'],['au','о'],['ou','у'],
+  ['bb','бб'],['cc','кк'],['dd','дд'],['ff','фф'],['gg','гг'],
+  ['ll','лл'],['mm','мм'],['nn','нн'],['pp','пп'],['rr','рр'],['ss','сс'],['tt','тт'],['zz','цц'],
+  ['a','а'],['b','б'],['c','к'],['d','д'],['e','э'],['f','ф'],
+  ['g','г'],['h','х'],['i','и'],['j','дж'],['k','к'],['l','л'],
+  ['m','м'],['n','н'],['o','о'],['p','п'],['q','к'],['r','р'],
+  ['s','с'],['t','т'],['u','у'],['v','в'],['w','в'],['x','кс'],['y','й'],['z','з']
+];
+const WORD_END = [
+  [/блес$/, 'блс'],[/тлес$/, 'тлс'],[/плес$/, 'плс'],[/лес$/, 'лс'],
+  [/([бвгджзклмнпрстфхцчшщ])ес$/, '$1с'],
+  [/([бвгджзклмнпрстфхцчшщ])е$/,  '$1']
+];
+const STOP = new Set(['и','или','в','на','с','по','для','к','от','из','за','не','как','это','то']);
+
+// ===== НОРМАЛИЗАЦИЯ ЕДИНИЦ ИЗМЕРЕНИЙ =====
+const UNIT_CANON = new Map([
+  ['г','г'],['г.','г'],['гр','г'],['гр.','г'],['грамм','г'],['граммов','г'],['грамма','г'],
+  ['g','г'],['gr','г'],['gramm','г'],['gram','г'],
+  ['мг','мг'],['мг.','мг'],['миллиграмм','мг'],['миллиграммов','мг'],['mg','мг'],
+  ['кг','кг'],['кг.','кг'],['килограмм','кг'],['килограммов','кг'],['кило','кг'],['kg','кг'],
+  ['мл','мл'],['мл.','мл'],['миллилитр','мл'],['миллилитров','мл'],['ml','мл'],
+  ['л','л'],['л.','л'],['литр','л'],['литров','л'],['литра','л'],
+  ['l','л'],['lt','л'],['ltr','л'],
+  ['шт','шт'],['шт.','шт'],['штука','шт'],['штук','шт'],['штуки','шт'],
+  ['pcs','шт'],['pc','шт'],
+]);
+const UNIT_CONV = {
+  'мг': { base: 'г',  factor: 0.001  },
+  'г':  { base: 'г',  factor: 1      },
+  'кг': { base: 'г',  factor: 1000   },
+  'мл': { base: 'мл', factor: 1      },
+  'л':  { base: 'мл', factor: 1000   },
+};
+const ABBR_DICT = new Map([
+  ['уп','упаковка'],['упак','упаковка'],['упк','упаковка'],
+  ['нб','набор'],['нбр','набор'],
+  ['кор','коробка'],['фл','флакон'],
+  ['тюб','тюбик'],['пак','пакет'],
+  ['банк','банка'],['бн','банка'],
+  ['ведр','ведро'],['вед','ведро'],
+  ['канист','канистра'],['кан','канистра'],
+  ['саш','саше'],['дой','дойпак'],
+  ['спр','спрей'],
+  ['ст','стекло'],['стекл','стекло'],
+  ['сб','стекло'],['стб','стекло'],['св','стекло'],
+  ['с/б','стекло'],['ст/б','стекло'],
+  ['пэт','пэт'],['pet','пэт'],
+  ['пл','пластик'],['пласт','пластик'],['пластм','пластик'],
+  ['мет','металл'],['жест','жесть'],['жб','жесть'],['ж/б','жесть'],
+  ['ком','комплект'],['компл','комплект'],['кмп','комплект'],
+  ['проф','профессиональный'],
+  ['натур','натуральный'],['нат','натуральный'],
+  ['конц','концентрат'],
+  ['антибакт','антибактериальный'],
+  ['ув','увлажняющий'],['отб','отбеливающий'],
+  ['муж','мужской'],['жен','женский'],['дет','детский'],
+  ['эко','эко'],['bio','био'],['organic','органик'],['org','органик'],
+]);
+function normalizeUnits(s) {
+  return s.replace(
+    /(\d+(?:[.,]\d+)?)\s*([а-яёa-zA-Z]{1,12}\.?)/gi,
+    (match, num, unitStr) => {
+      const uk = unitStr.toLowerCase().replace(/\.$/, '');
+      const canon = UNIT_CANON.get(uk);
+      if (!canon) return match;
+      const conv = UNIT_CONV[canon];
+      if (!conv) return num + canon + ' ';
+      const val = Math.round(
+        parseFloat(num.replace(',', '.')) * conv.factor * 100000
+      ) / 100000;
+      return val + conv.base + ' ';
+    }
+  );
+}
+function expandAbbr(tokens) {
+  const res = [];
+  for (const t of tokens) {
+    const exp = ABBR_DICT.get(t);
+    if (exp) {
+      for (const w of exp.split(' ')) { if (w.length > 1 && !STOP.has(w)) res.push(w); }
+    } else { res.push(t); }
+  }
+  return res;
+}
+
+const BC_COLS_W   = ['штрихкод','штрих-код','barcode','шк','ean','код'];
+const NAME_COLS_W = ['название','наименование','name','товар','продукт','наим'];
+
+function translitWord(w) {
+  let s = w.toLowerCase(), out = '', i = 0;
+  while (i < s.length) {
+    let hit = false;
+    for (const [lat, cyr] of TL) {
+      if (s.startsWith(lat, i)) { out += cyr; i += lat.length; hit = true; break; }
+    }
+    if (!hit) { out += s[i]; i++; }
+  }
+  for (const [re, rep] of WORD_END) out = out.replace(re, rep);
+  return out;
+}
+const _VOW=new Set('аеёиоуыэюя'.split(''));const _isV=c=>_VOW.has(c);
+function _rv(w){for(let i=0;i<w.length;i++)if(_isV(w[i]))return i+1;return w.length;}
+function _r1(w){for(let i=1;i<w.length;i++)if(!_isV(w[i])&&_isV(w[i-1]))return i+1;return w.length;}
+function _r2(w,r1){for(let i=r1+1;i<w.length;i++)if(!_isV(w[i])&&_isV(w[i-1]))return i+1;return w.length;}
+function _strip(w,ss,f){const s=[...ss].sort((a,b)=>b.length-a.length);for(const x of s)if(w.endsWith(x)&&(w.length-x.length)>=f)return w.slice(0,-x.length);return null;}
+function _stripP(w,ss,f,p){const s=[...ss].sort((a,b)=>b.length-a.length);for(const x of s){if(w.endsWith(x)){const b=w.slice(0,-x.length);if(b.length>=f&&p.has(b.slice(-1)))return b;}}return null;}
+function stemRu(word){if(!word||word.length<=2)return word;if(!/[а-яё]/.test(word))return word;const rv=_rv(word),r1=_r1(word),r2=_r2(word,r1);let w=word,r;r=_strip(w,['ившись','ивши','ывшись','ывши','ив','ыв'],rv);if(r!=null){w=r;}else{r=_stripP(w,['авшись','явшись','авши','явши','ав','яв'],rv,new Set(['а','я']));if(r!=null)w=r;}r=_strip(w,['ся','сь'],rv);if(r!=null)w=r;const ADJ=['ими','ыми','ией','ий','ый','ой','ей','ем','им','ым','ом','его','ого','ему','ому','ую','юю','ая','яя','ое','ее'];const PA=['вшем','вших','вшим','вшей','вшего','ем','нн','вш','ющ','щ'],PF=['ивш','ывш','ующ'];let adj=false;for(const s of [...ADJ].sort((a,b)=>b.length-a.length)){if(w.endsWith(s)&&(w.length-s.length)>=rv){const b=w.slice(0,-s.length);let p=_stripP(b,PA,rv,new Set(['а','я']));if(p==null)p=_strip(b,PF,rv);w=p!=null?p:b;adj=true;break;}}if(!adj){const VA=['ала','яла','али','яли','ало','яло','ана','яна','ает','яет','ают','яют','аешь','яешь','ай','яй','ал','ял','ать','ять'];const VF=['ила','ыла','ена','ейте','уйте','ите','или','ыли','ей','уй','ил','ыл','им','ым','ен','ило','ыло','ено','ует','уют','ит','ыт','ишь','ышь','ую','ю'];r=_stripP(w,VA,rv,new Set(['а','я']));if(r==null)r=_strip(w,VF,rv);if(r!=null){w=r;}else{const N=['иями','ями','ами','ией','ием','иям','ев','ов','ие','ье','еи','ии','ей','ой','ий','ям','ем','ам','ом','ях','ах','е','и','й','о','у','а','ь','ю','я'];r=_strip(w,N,rv);if(r!=null)w=r;}}if(w.endsWith('и')&&(w.length-1)>=rv)w=w.slice(0,-1);r=_strip(w,['ость','ост'],r2);if(r!=null)w=r;if(w.endsWith('нн'))w=w.slice(0,-1);if(w.endsWith('ь')&&(w.length-1)>=rv)w=w.slice(0,-1);return w.length>=2?w:word;}
+
+function normalize(raw) {
+  if (!raw) return '';
+  let s = normalizeUnits(String(raw));
+  s = s.toLowerCase()
+    .replace(/[^\wа-яёa-z0-9\s]/gi, ' ')
+    .replace(/[a-z]+/gi, m => translitWord(m))
+    .replace(/\s+/g, ' ').trim();
+  const _t=expandAbbr(s.split(' ').filter(w=>w.length>1&&!STOP.has(w)));
+  return _t.map(t=>stemRu(t)).join(' ');
+}
+function trigrams(s) {
+  const st = new Set(), p = '#' + s + '#';
+  for (let i = 0; i < p.length - 2; i++) st.add(p.slice(i, i + 3));
+  return st;
+}
+function triSim(a, b) {
+  if (!a || !b) return 0;
+  const ta = trigrams(a), tb = trigrams(b);
+  let n = 0; for (const g of ta) if (tb.has(g)) n++;
+  return n * 2 / (ta.size + tb.size);
+}
+function lcsLen(a, b) {
+  const A = a.split(' ').slice(0, 80), B = b.split(' ').slice(0, 80);
+  let prev = new Uint8Array(B.length + 1), curr = new Uint8Array(B.length + 1);
+  for (let i = 0; i < A.length; i++) {
+    for (let j = 0; j < B.length; j++)
+      curr[j+1] = A[i] === B[j] ? prev[j] + 1 : Math.max(curr[j], prev[j+1]);
+    [prev, curr] = [curr, prev]; curr.fill(0);
+  }
+  return prev[B.length];
+}
+function lcsSim(a, b) {
+  if (!a || !b) return (a === b) ? 1 : 0;
+  const wa = Math.min(a.split(' ').length, 80), wb = Math.min(b.split(' ').length, 80);
+  return 2 * lcsLen(a, b) / (wa + wb);
+}
+function extractNums(s) {
+  return (s.match(/\d+(?:[.,]\d+)?/g) || []).map(n => parseFloat(n.replace(',', '.')));
+}
+// ===== TF-IDF =====
+function buildIDF(items) {
+  const df = new Map();
+  for (const it of items) {
+    const seen = new Set(it._norm.split(' ').filter(t => t.length > 1));
+    for (const t of seen) df.set(t, (df.get(t) || 0) + 1);
+  }
+  const N = items.length;
+  const idf = new Map();
+  for (const [t, freq] of df)
+    idf.set(t, Math.log((N + 1) / (freq + 1)) + 1);
+  return idf;
+}
+// Взвешенное Dice-сходство токенов (инвариантно к порядку)
+function wTokenSim(a, b, idf) {
+  const A = a.split(' '), B = b.split(' ');
+  let wA = 0, wB = 0;
+  const mA = new Map(), mB = new Map();
+  for (const t of A) { const w = idf.get(t) || 1; mA.set(t, (mA.get(t)||0)+w); wA += w; }
+  for (const t of B) { const w = idf.get(t) || 1; mB.set(t, (mB.get(t)||0)+w); wB += w; }
+  if (!wA || !wB) return 0;
+  let inter = 0;
+  for (const [t, wa] of mA) if (mB.has(t)) inter += Math.min(wa, mB.get(t));
+  return 2 * inter / (wA + wB);
+}
+
+function buildInvIdx(items) {
+  const idx = new Map();
+  items.forEach((it, i) => {
+    for (const tok of it._norm.split(' ')) {
+      if (tok.length < 2) continue;
+      if (!idx.has(tok)) idx.set(tok, []);
+      idx.get(tok).push(i);
+    }
+  });
+  return idx;
+}
+function getCandidates(norm, idx, limit = 35, idf) {
+  const toks = norm.split(' ').filter(t => t.length > 1);
+  const scores = new Map();
+  for (const t of toks) {
+    const w = idf ? (idf.get(t) || 1) : 1;
+    for (const id of (idx.get(t) || [])) scores.set(id, (scores.get(id)||0) + w);
+  }
+  return [...scores.entries()].sort((a,b) => b[1]-a[1]).slice(0, limit).map(([id]) => id);
+}
+function calcSim(name1, name2, idf) {
+  const n1 = normalize(name1), n2 = normalize(name2);
+  if (!n1 || !n2) return 0;
+  const tri = triSim(n1, n2);
+  // Инвариантность к порядку: max(LCS по исходному, LCS по сортированному)
+  const n1s = n1.split(' ').sort().join(' ');
+  const n2s = n2.split(' ').sort().join(' ');
+  const lcss = Math.max(lcsSim(n1, n2), lcsSim(n1s, n2s));
+  // TF-IDF взвешенное перекрытие токенов
+  const wTok = idf ? wTokenSim(n1, n2, idf) : lcss;
+  const nums1 = extractNums(n1), nums2 = extractNums(n2);
+  let numBonus = 0, numPenalty = false;
+  if (nums1.length && nums2.length) {
+    const s1 = new Set(nums1.map(String)), s2 = new Set(nums2.map(String));
+    const ratio = [...s1].filter(x => s2.has(x)).length / new Set([...s1,...s2]).size;
+    numBonus = ratio * 0.15;
+    if (ratio < 0.5) numPenalty = true;
+  }
+  let score = tri * 0.35 + lcss * 0.25 + wTok * 0.40 + numBonus;
+  if (numPenalty) score *= 0.6;
+  return Math.min(100, Math.round(score * 100));
+}
+function findCol(data, variants) {
+  if (!data?.length) return null;
+  const cols = Object.keys(data[0]);
+  return cols.find(c => variants.some(v => c.toLowerCase().includes(v))) ?? cols[0];
+}
+self.onmessage = function({ data }) {
+  if (data.type !== 'run') return;
+  const { db, priceFiles, candidateLimit } = data;
+  const activePairs = [], sameBCPairs = [], knownPairs = [];
+  const bc2key = new Map(), bc2name = new Map();
+  for (const [key, val] of Object.entries(db)) {
+    const name = Array.isArray(val) ? (val[0] || '') : '';
+    bc2key.set(key, key); bc2name.set(key, name);
+    if (Array.isArray(val))
+      val.slice(1).forEach(s => { s = String(s).trim(); if (s) { bc2key.set(s, key); bc2name.set(s, name); } });
+  }
+  const items = [];
+  for (let fi = 0; fi < priceFiles.length; fi++) {
+    const f = priceFiles[fi];
+    const bcC = findCol(f.data, BC_COLS_W), nmC = findCol(f.data, NAME_COLS_W);
+    if (!bcC || !nmC) continue;
+    for (const row of f.data) {
+      const bc = String(row[bcC]||'').trim(), nm = String(row[nmC]||'').trim();
+      if (bc && nm) items.push({ bc, name: nm, fi, file: f.name, _norm: normalize(nm) });
+    }
+  }
+  if (!items.length) {
+    self.postMessage({ type: 'done', activePairs, sameBCPairs, knownPairs }); return;
+  }
+  const jsonItems = Object.entries(db).map(([key, val]) => ({
+    bc: key, name: Array.isArray(val) ? (val[0]||key) : key,
+    fi: -1, file: 'JSON база',
+    _norm: normalize(Array.isArray(val) ? (val[0]||key) : key)
+  }));
+  const allItems = [...items, ...jsonItems];
+  const invIdx   = buildInvIdx(allItems);
+  const idf      = buildIDF(allItems);
+  const effectiveLimit = (candidateLimit > 0)
+    ? candidateLimit
+    : Math.max(35, Math.min(300, Math.ceil(allItems.length * 0.05)));
+  const seen     = new Set();
+  for (let i = 0; i < items.length; i++) {
+    if (i % 200 === 0)
+      self.postMessage({ type: 'progress', pct: Math.round(i / items.length * 100) });
+    const a     = items[i];
+    const aInDB = bc2key.has(a.bc), aKey = bc2key.get(a.bc);
+    const matchNorm = aInDB ? normalize(bc2name.get(a.bc) || a.name) : a._norm;
+    let best = null;
+    for (const id of getCandidates(matchNorm, invIdx, effectiveLimit, idf)) {
+      const b = allItems[id];
+      if (!b || b.fi === a.fi) continue;
+      if (b.bc === a.bc) {
+        const pk = [a.bc, String(a.fi), String(b.fi)].join('|');
+        if (!seen.has(pk)) {
+          seen.add(pk);
+          sameBCPairs.push({ bc1: a.bc, name1: a.name, file1: a.file,
+            bc2: b.bc, name2: b.name, file2: b.file, sim: 100,
+            aInDB, bInDB: bc2key.has(b.bc), aKey, bKey: bc2key.get(b.bc) });
+        }
+        continue;
+      }
+      const pk = [a.bc, b.bc].sort().join('|');
+      if (seen.has(pk)) continue;
+      const sim = calcSim(a.name, b.name, idf);
+      if (sim >= 40 && (!best || sim > best.sim)) best = { ...b, sim };
+    }
+    if (best) {
+      const pk = [a.bc, best.bc].sort().join('|');
+      if (!seen.has(pk)) {
+        seen.add(pk);
+        const bInDB = bc2key.has(best.bc), bKey = bc2key.get(best.bc);
+        const pair = { bc1: a.bc, name1: a.name, file1: a.file,
+                       bc2: best.bc, name2: best.name, file2: best.file,
+                       sim: best.sim, aInDB, bInDB, aKey, bKey };
+        if (aInDB && bInDB && aKey === bKey) knownPairs.push(pair);
+        else activePairs.push(pair);
+      }
+    }
+  }
+  activePairs.sort((a, b) => b.sim - a.sim);
+  knownPairs.sort((a, b)  => b.sim - a.sim);
+  self.postMessage({ type: 'progress', pct: 100 });
+  self.postMessage({ type: 'done', activePairs, sameBCPairs, knownPairs });
+};
+`;
+
+let _matchWorker = null;
+
+function getMatchWorker() {
+  if (_matchWorker) _matchWorker.terminate();
+  const blob = new Blob([WORKER_SRC], { type: 'application/javascript' });
+  _matchWorker = new Worker(URL.createObjectURL(blob));
+  _matchWorker.onmessage = handleWorkerMsg;
+  _matchWorker.onerror   = err => { console.error('Worker error:', err); hideProgress(); };
+  return _matchWorker;
+}
+
+function runMatcher() {
+  if (!priceFiles.length) return;
+  showProgress('Анализирую прайсы...');
+  activePairs = []; sameBCPairs = []; knownPairs = [];
+  // addedPairs сохраняем — не сбрасываем при перезапуске
+  getMatchWorker().postMessage({ type: 'run', db, priceFiles, candidateLimit: CANDIDATE_LIMIT });
+}
+
+
+function buildLocalBc2key() {
+  const m = new Map();
+  for (const [key, val] of Object.entries(db)) {
+    m.set(key, key);
+    if (Array.isArray(val)) val.slice(1).forEach(s => { s = String(s).trim(); if (s) m.set(s, key); });
+  }
+  return m;
+}
+function updatePairTags() {
+  if (!priceFiles.length) return;
+  const bc2key = buildLocalBc2key();
+  const stillActive = [];
+  for (const r of activePairs) {
+    r.aInDB = bc2key.has(r.bc1); r.bInDB = bc2key.has(r.bc2);
+    r.aKey  = bc2key.get(r.bc1); r.bKey  = bc2key.get(r.bc2);
+    if (r.aInDB && r.bInDB && r.aKey === r.bKey) knownPairs.push(r);
+    else stillActive.push(r);
+  }
+  activePairs.length = 0; activePairs.push(...stillActive);
+  for (const r of sameBCPairs) {
+    r.aInDB = bc2key.has(r.bc1); r.bInDB = bc2key.has(r.bc2);
+    r.aKey  = bc2key.get(r.bc1); r.bKey  = bc2key.get(r.bc2);
+  }
+  document.getElementById('sAll').textContent    = activePairs.length;
+  document.getElementById('sSameBC').textContent = sameBCPairs.length;
+  document.getElementById('sKnown').textContent  = knownPairs.length;
+  document.getElementById('sAdded').textContent  = addedPairs.length;
+  setView(currentView);
+}
+function addAllSameBC() {
+  const toAdd = sameBCPairs.filter(r => !r.aInDB && !r.bInDB);
+  if (!toAdd.length) { toast('Все пары уже в базе', 'info'); return; }
+  saveHistory();
+  let added = 0;
+  for (const r of toAdd) {
+    if (!db[r.bc1]) { db[r.bc1] = [r.name1]; added++; }
+  }
+  const addedSet = new Set(toAdd.map(r => r.bc1));
+  for (let i = sameBCPairs.length - 1; i >= 0; i--) {
+    const r = sameBCPairs[i];
+    if (addedSet.has(r.bc1) && !r.aInDB && !r.bInDB) sameBCPairs.splice(i, 1);
+  }
+  document.getElementById('sSameBC').textContent = sameBCPairs.length;
+  notifyChange(); renderEditor();
+  toast('Добавлено ' + added + ' групп', 'ok');
+  updatePairTags();
+}
+
+function handleWorkerMsg({ data }) {
+  if (data.type === 'progress') {
+    updateProgress(data.pct);
+  } else if (data.type === 'done') {
+    activePairs = data.activePairs;
+    sameBCPairs = data.sameBCPairs;
+    knownPairs  = data.knownPairs;
+    updateProgress(100); hideProgress();
+    document.getElementById('sAll').textContent    = activePairs.length;
+    document.getElementById('sSameBC').textContent = sameBCPairs.length;
+    document.getElementById('sKnown').textContent  = knownPairs.length;
+    document.getElementById('sAdded').textContent  = addedPairs.length;
+    document.getElementById('statsRow').classList.add('show');
+    const msb = document.getElementById('matcherSubBar');
+    if (msb) msb.style.display = '';
+    const msi = document.getElementById('matchSearchInp');
+    if (msi) msi.disabled = false;
+    setView(currentView);
+  }
+}
+
+// =============================================================================
+// ② ВИРТУАЛЬНЫЙ СКРОЛЛИНГ
+// =============================================================================
+const VS = {
+  ROW_H:    33,   // примерная высота строки px
+  OVERSCAN: 15,   // буфер строк выше/ниже видимой области
+  keys:     [],   // текущий отфильтрованный список ключей
+  start:    0,
+  end:      0,
+  ticking:  false
+};
+
+// Строит HTML одной строки редактора
+function buildEditorRow(key, absIdx, dups) {
+  const val  = db[key] || [];
+  const name = val[0] || '';
+  const syns = val.slice(1).filter(s => String(s).trim());
+
+  const pillsHtml = syns.map((syn, si) => {
+    const s     = String(syn).trim();
+    const isDup = dups.has(s);
+    const wCls  = isDup ? 'syn-wrap dup' : 'syn-wrap';
+    const pCls  = isDup ? 'syn-pill dup' : 'syn-pill';
+    const ttl   = isDup ? '\u26a0\ufe0f \u0414\u0443\u0431\u043b\u044c: ' + s : s;
+    return '<span class="' + wCls + '"><a class="' + pCls + '" href="' + barcodeUrl(s) + '" target="_blank" title="' + escv(ttl) + '">' + esc(s) + '</a>'
+         + '<span class="syn-x" data-key="' + escv(key) + '" data-si="' + si + '" title="\u0423\u0434\u0430\u043b\u0438\u0442\u044c">\xd7</span></span>';
+  }).join('');
+
+  return '<tr id="r-' + safeId(key) + '">'
+    + '<td class="td-n">' + (absIdx + 1) + '</td>'
+    + '<td><input class="inp" value="' + escv(name) + '" data-namekey="' + escv(key) + '" style="min-width:180px;width:100%"></td>'
+    + '<td><input class="inp inp-bc' + (dups.has(key) ? ' dup-inp' : '') + '" value="' + escv(key) + '" data-origkey="' + escv(key) + '"'
+    + ' title="\u0413\u043b\u0430\u0432\u043d\u044b\u0439 \u0428\u041a \u2014 Enter \u0438\u043b\u0438 \u043f\u043e\u0442\u0435\u0440\u044f \u0444\u043e\u043a\u0443\u0441\u0430 \u0434\u043b\u044f \u043f\u0435\u0440\u0435\u0438\u043c\u0435\u043d\u043e\u0432\u0430\u043d\u0438\u044f"'
+    + ' style="min-width:120px;width:100%;font-family:monospace"></td>'
+    + '<td><div class="syn-cell">' + pillsHtml + '<input class="inp-add-syn" placeholder="+ \u0428\u041a" data-key="' + escv(key) + '" title="Enter \u0434\u043b\u044f \u0434\u043e\u0431\u0430\u0432\u043b\u0435\u043d\u0438\u044f"></div></td>'
+    + '<td><div class="acts"><button class="i-btn del" data-key="' + escv(key) + '" title="\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0433\u0440\u0443\u043f\u043f\u0443">\uD83D\uDDD1</button></div></td>'
+    + '</tr>';
+}
+
+// Рисует только видимое окно + спейсеры сверху/снизу
+function renderEditorVS() {
+  const wrap = document.querySelector('#pane-editor .tbl-wrap');
+  if (!wrap) return;
+  const total     = VS.keys.length;
+  const scrollTop = wrap.scrollTop;
+  const viewH     = wrap.clientHeight || 600;
+
+  VS.start = Math.max(0, Math.floor(scrollTop / VS.ROW_H) - VS.OVERSCAN);
+  VS.end   = Math.min(total, Math.ceil((scrollTop + viewH) / VS.ROW_H) + VS.OVERSCAN);
+
+  const topPad = VS.start * VS.ROW_H;
+  const botPad = Math.max(0, total - VS.end) * VS.ROW_H;
+  const dups   = findDuplicates();
+
+  const rows = VS.keys.slice(VS.start, VS.end)
+    .map((key, rel) => buildEditorRow(key, VS.start + rel, dups))
+    .join('');
+
+  document.getElementById('eTbody').innerHTML =
+    '<tr class="vs-spacer"><td colspan="5" style="height:' + topPad + 'px;padding:0;border:none;pointer-events:none"></td></tr>' +
+    rows +
+    '<tr class="vs-spacer"><td colspan="5" style="height:' + botPad + 'px;padding:0;border:none;pointer-events:none"></td></tr>';
+}
+
+// ③ Инкрементальное обновление — только одна строка без пересборки всей таблицы
+function patchEditorRow(key) {
+  const rowEl = document.getElementById('r-' + safeId(key));
+  if (!rowEl) return;   // строка за пределами видимой области — пропускаем
+  const idx = VS.keys.indexOf(key);
+  if (idx === -1) return;
+  const dups = findDuplicates();
+  const tmp  = document.createElement('tbody');
+  tmp.innerHTML = buildEditorRow(key, idx, dups);
+  rowEl.replaceWith(tmp.firstElementChild);
+}
+
+// =============================================================================
+// INIT
+// =============================================================================
+(function init() {
+  try {
+    const raw = JSON.parse(document.getElementById('embeddedData').textContent);
+    if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+      db = raw; currentFileName = ''; updateStatus();
+    }
+  } catch {}
+
+  document.getElementById('jsonIn').addEventListener('change',  handleJSONLoad);
+  document.getElementById('priceIn').addEventListener('change', handlePriceLoad);
+  document.getElementById('xlsIn').addEventListener('change',   handleXLSImport);
+
+  // Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z
+  document.addEventListener('keydown', function(e) {
+    const inInput = e.target.matches('input,textarea,select');
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey && !inInput) {
+      e.preventDefault(); undo();
+    } else if ((e.ctrlKey || e.metaKey) &&
+               (e.key === 'y' || (e.key === 'z' && e.shiftKey)) && !inInput) {
+      e.preventDefault(); redo();
+    }
+  });
+
+  const _tb = document.getElementById('eTbody');
+
+  _tb.addEventListener('keydown', function(e) {
+    if (e.target.classList.contains('inp-add-syn')) {
+      if (e.key !== 'Enter') return;
+      e.preventDefault(); saveSynInput(e.target);
+    } else if (e.target.classList.contains('inp-bc')) {
+      if (e.key !== 'Enter') return;
+      e.preventDefault(); e.target.blur();
+    }
+  });
+
+  _tb.addEventListener('focusout', function(e) {
+    if (e.target.classList.contains('inp-add-syn'))  saveSynInput(e.target);
+    else if (e.target.classList.contains('inp-bc'))  renameMainBC(e.target);
+  });
+
+  _tb.addEventListener('input', function(e) {
+    if (e.target.classList.contains('inp-add-syn')) {
+      checkSynDupInline(e.target);
+    } else if (e.target.classList.contains('inp') && e.target.dataset.namekey) {
+      const k = e.target.dataset.namekey;
+      if (db[k]) { saveHistory(); db[k][0] = e.target.value; notifyChange(); }
+    }
+  });
+
+  _tb.addEventListener('click', function(e) {
+    const x = e.target.closest('.syn-x[data-key]');
+    if (x) {
+      e.preventDefault(); e.stopPropagation();
+      const key = x.dataset.key, si = parseInt(x.dataset.si, 10);
+      if (!db[key] || isNaN(si)) return;
+      saveHistory();
+      db[key].splice(si + 1, 1);
+      notifyChange();
+      patchEditorRow(key);   // ← только эта строка, без полного ре-рендера
+      return;
+    }
+    const d = e.target.closest('.i-btn.del[data-key]');
+    if (d) {
+      const key = d.dataset.key; if (!key) return;
+      if (!confirm('Удалить группу «' + key + '»?')) return;
+      saveHistory(); delete db[key]; notifyChange(); renderEditor();
+    }
+  });
+
+  // Виртуальный скролл: перерисовка через rAF — не блокирует UI
+  const editorWrap = document.querySelector('#pane-editor .tbl-wrap');
+  if (editorWrap) {
+    editorWrap.addEventListener('scroll', function() {
+      if (!VS.ticking) {
+        VS.ticking = true;
+        requestAnimationFrame(() => { renderEditorVS(); VS.ticking = false; });
+      }
+    }, { passive: true });
+  }
+
+  refreshBadge(); updateStatus(); renderEditor();
+  initEventListeners();
+  if(localStorage.getItem("syn_dark")==="1"){document.body.classList.add("dark");var _d=document.getElementById("darkBtn");if(_d)_d.textContent="☀️ Тема";}
+  if(!Object.keys(db).length) autoLoad();
+})();
+
+// =============================================================================
+// TABS
+// =============================================================================
+function switchTab(name) {
+  document.querySelectorAll('.tab[data-tab]').forEach(t =>
+    t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.pane').forEach(p =>
+    p.classList.toggle('active', p.id === 'pane-' + name));
+}
+
+// =============================================================================
+// JSON LOAD / SAVE
+// =============================================================================
+async function handleJSONLoad(e) {
+  const file = e.target.files[0]; if (!file) return; e.target.value = '';
+  try {
+    const parsed = JSON.parse(await file.text());
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed))
+      throw new Error('Ожидается объект, а не массив');
+    db = parsed; changes = 0; currentFileName = file.name;
+    updateStatus(); refreshBadge(); renderEditor();
+    toast('База загружена: '+Object.keys(db).length+' наим.','ok');
+    if (priceFiles.length) runMatcher();
+  } catch(err) { toast('Ошибка JSON: ' + err.message,'warn'); }
+}
+
+async function saveJSON() {
+  const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+  await fileSave(blob, 'synonyms_' + dateStr() + '.json', 'application/json', '.json');
+  changes = 0; refreshBadge(); toast('JSON сохранён','ok');
+}
+
+async function saveHTML() {
+  const em = document.getElementById('embeddedData');
+  em.textContent = JSON.stringify(db, null, 2).replace(/<\/script>/gi, '<\\/script>');
+  const html = '<!DOCTYPE html>' + document.documentElement.outerHTML;
+  await fileSave(new Blob([html], { type: 'text/html;charset=utf-8' }),
+    'synonyms_app_' + dateStr() + '.html', 'text/html', '.html');
+  changes = 0; refreshBadge(); toast('Приложение сохранено','ok');
+}
+
+async function fileSave(blob, name, mime, ext) {
+  if (window.showSaveFilePicker) {
+    try {
+      const h = await window.showSaveFilePicker({
+        suggestedName: name,
+        types: [{ description: name, accept: { [mime]: [ext] } }]
+      });
+      const w = await h.createWritable(); await w.write(blob); await w.close();
+      setStatus(name); return;
+    } catch(err) { if (err.name === 'AbortError') return; }
+  }
+  const a = Object.assign(document.createElement('a'),
+    { href: URL.createObjectURL(blob), download: name });
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+}
+
+function setStatus(t)    { document.getElementById('jsonStatus').textContent = t; }
+function refreshBadge()  {
+  const b = document.getElementById('badge');
+  b.textContent = changes + ' ●'; b.classList.toggle('show', changes > 0);
+}
+function notifyChange()  { changes++; refreshBadge(); updateStatus(); autoSave(); }
+
+// =============================================================================
+// HISTORY
+// =============================================================================
+function saveHistory() {
+  undoStack.push(JSON.stringify(db));
+  if (undoStack.length > HISTORY_LIMIT) undoStack.shift();
+  redoStack = []; updateUndoUI();
+}
+function undo() {
+  if (!undoStack.length) return;
+  redoStack.push(JSON.stringify(db));
+  db = JSON.parse(undoStack.pop());
+  changes = Math.max(0, changes - 1);
+  refreshBadge(); updateStatus(); renderEditor(); updateUndoUI();
+}
+function redo() {
+  if (!redoStack.length) return;
+  undoStack.push(JSON.stringify(db));
+  db = JSON.parse(redoStack.pop());
+  changes++; refreshBadge(); updateStatus(); renderEditor(); updateUndoUI();
+}
+function updateUndoUI() {
+  const u = document.getElementById('undoBtn'), r = document.getElementById('redoBtn');
+  if (u) u.disabled = !undoStack.length;
+  if (r) r.disabled = !redoStack.length;
+}
+function countSynonyms() {
+  let t = 0;
+  for (const v of Object.values(db)) if (Array.isArray(v)) t += Math.max(0, v.length - 1);
+  return t;
+}
+function updateStatus() {
+  const n = Object.keys(db).length;
+  if (!n) { setStatus('JSON не загружен'); return; }
+  const s = countSynonyms();
+  const base = currentFileName ? currentFileName + ' \u2014 ' : '';
+  setStatus(base + n + ' наим., ' + s + ' синонимов');
+}
+
+// =============================================================================
+// BARCODE URL
+// =============================================================================
+function barcodeUrl(bc) {
+  return 'https://barcode-list.ru/barcode/RU/%D0%9F%D0%BE%D0%B8%D1%81%D0%BA.htm?barcode=' + encodeURIComponent(bc);
+}
+
+// =============================================================================
+// FILE PARSING
+// =============================================================================
+function parseCSV(file) {
+  return new Promise((res, rej) =>
+    Papa.parse(file, { header: true, skipEmptyLines: true, complete: r => res(r.data), error: rej }));
+}
+function parseXLSX(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = e => {
+      try {
+        const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+        res(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]));
+      } catch(err) { rej(err); }
+    };
+    r.readAsArrayBuffer(file);
+  });
+}
+function findCol(data, variants) {
+  if (!data?.length) return null;
+  const cols = Object.keys(data[0]);
+  return cols.find(c => variants.some(v => c.toLowerCase().includes(v))) ?? cols[0];
+}
+
+// =============================================================================
+// PRICE FILES
+// =============================================================================
+async function handlePriceLoad(e) {
+  const files = Array.from(e.target.files); if (!files.length) return; e.target.value = '';
+  showProgress('\u0417\u0430\u0433\u0440\u0443\u0436\u0430\u044e \u043f\u0440\u0430\u0439\u0441\u044b...');
+  for (const file of files) {
+    try {
+      const rows = file.name.toLowerCase().endsWith('.csv') ? await parseCSV(file) : await parseXLSX(file);
+      const idx  = priceFiles.findIndex(f => f.name === file.name);
+      if (idx >= 0) priceFiles[idx] = { name: file.name, data: rows };
+      else          priceFiles.push({ name: file.name, data: rows });
+    } catch(err) { toast(file.name + ': ' + err.message,'warn'); }
+  }
+  hideProgress(); renderToolbarChips();
+  if (priceFiles.length) runMatcher();
+}
+
+function renderToolbarChips() {
+  document.getElementById('tChips').innerHTML = priceFiles.map((f, i) =>
+    '<span class="t-chip">' + esc(f.name) + ' (' + f.data.length + ')'
+    + '<span class="t-chip-x" data-remove-file="' + i + '">\xd7</span></span>'
+  ).join('');
+}
+
+function removeFile(i) {
+  priceFiles.splice(i, 1); renderToolbarChips();
+  if (priceFiles.length) runMatcher(); else clearMatcher();
+}
+
+// =============================================================================
+// NORMALIZATION (главный поток — для поиска/фильтрации в UI)
+// =============================================================================
+const TL = [
+  ['ight','\u0430\u0439\u0442'],['tion','\u0448\u043d'],['ough','\u043e\u0444'],['sch','\u0448'],['tch','\u0447'],
+  ['all','\u043e\u043b'],['ing','\u0438\u043d\u0433'],['igh','\u0430\u0439'],['ull','\u0443\u043b'],['oor','\u0443\u0440'],
+  ['alk','\u043e\u043a'],['awn','\u043e\u043d'],['sh','\u0448'],['ch','\u0447'],['zh','\u0436'],
+  ['kh','\u0445'],['ph','\u0444'],['th','\u0442'],['wh','\u0432'],['ck','\u043a'],['qu','\u043a\u0432'],['ts','\u0446'],['tz','\u0446'],
+  ['oo','\u0443'],['ee','\u0438'],['ea','\u0438'],['ui','\u0443'],['ew','\u044e'],
+  ['aw','\u043e'],['ow','\u043e\u0443'],['oi','\u043e\u0439'],['oy','\u043e\u0439'],['ai','\u0435\u0439'],['ay','\u0435\u0439'],['au','\u043e'],['ou','\u0443'],
+  ['bb','\u0431\u0431'],['cc','\u043a\u043a'],['dd','\u0434\u0434'],['ff','\u0444\u0444'],['gg','\u0433\u0433'],
+  ['ll','\u043b\u043b'],['mm','\u043c\u043c'],['nn','\u043d\u043d'],['pp','\u043f\u043f'],['rr','\u0440\u0440'],['ss','\u0441\u0441'],['tt','\u0442\u0442'],['zz','\u0446\u0446'],
+  ['a','\u0430'],['b','\u0431'],['c','\u043a'],['d','\u0434'],['e','\u044d'],['f','\u0444'],
+  ['g','\u0433'],['h','\u0445'],['i','\u0438'],['j','\u0434\u0436'],['k','\u043a'],['l','\u043b'],
+  ['m','\u043c'],['n','\u043d'],['o','\u043e'],['p','\u043f'],['q','\u043a'],['r','\u0440'],
+  ['s','\u0441'],['t','\u0442'],['u','\u0443'],['v','\u0432'],['w','\u0432'],['x','\u043a\u0441'],['y','\u0439'],['z','\u0437']
+];
+const WORD_END = [
+  [/\u0431\u043b\u0435\u0441$/, '\u0431\u043b\u0441'],
+  [/\u0442\u043b\u0435\u0441$/, '\u0442\u043b\u0441'],
+  [/\u043f\u043b\u0435\u0441$/, '\u043f\u043b\u0441'],
+  [/\u043b\u0435\u0441$/, '\u043b\u0441'],
+  [/([бвгджзклмнпрстфхцчшщ])\u0435\u0441$/, '$1\u0441'],
+  [/([бвгджзклмнпрстфхцчшщ])\u0435$/, '$1']
+];
+const STOP = new Set(['\u0438','\u0438\u043b\u0438','\u0432','\u043d\u0430','\u0441','\u043f\u043e',
+  '\u0434\u043b\u044f','\u043a','\u043e\u0442','\u0438\u0437','\u0437\u0430','\u043d\u0435',
+  '\u043a\u0430\u043a','\u044d\u0442\u043e','\u0442\u043e']);
+
+// ===== НОРМАЛИЗАЦИЯ ЕДИНИЦ ИЗМЕРЕНИЙ =====
+const UNIT_CANON = new Map([
+  ['г','г'],['г.','г'],['гр','г'],['гр.','г'],['грамм','г'],['граммов','г'],['грамма','г'],
+  ['g','г'],['gr','г'],['gramm','г'],['gram','г'],
+  ['мг','мг'],['мг.','мг'],['миллиграмм','мг'],['миллиграммов','мг'],['mg','мг'],
+  ['кг','кг'],['кг.','кг'],['килограмм','кг'],['килограммов','кг'],['кило','кг'],['kg','кг'],
+  ['мл','мл'],['мл.','мл'],['миллилитр','мл'],['миллилитров','мл'],['ml','мл'],
+  ['л','л'],['л.','л'],['литр','л'],['литров','л'],['литра','л'],
+  ['l','л'],['lt','л'],['ltr','л'],
+  ['шт','шт'],['шт.','шт'],['штука','шт'],['штук','шт'],['штуки','шт'],
+  ['pcs','шт'],['pc','шт'],
+]);
+const UNIT_CONV = {
+  'мг': { base: 'г',  factor: 0.001  },
+  'г':  { base: 'г',  factor: 1      },
+  'кг': { base: 'г',  factor: 1000   },
+  'мл': { base: 'мл', factor: 1      },
+  'л':  { base: 'мл', factor: 1000   },
+};
+const ABBR_DICT = new Map([
+  ['уп','упаковка'],['упак','упаковка'],['упк','упаковка'],
+  ['нб','набор'],['нбр','набор'],
+  ['кор','коробка'],['фл','флакон'],
+  ['тюб','тюбик'],['пак','пакет'],
+  ['банк','банка'],['бн','банка'],
+  ['ведр','ведро'],['вед','ведро'],
+  ['канист','канистра'],['кан','канистра'],
+  ['саш','саше'],['дой','дойпак'],
+  ['спр','спрей'],
+  ['ст','стекло'],['стекл','стекло'],
+  ['сб','стекло'],['стб','стекло'],['св','стекло'],
+  ['с/б','стекло'],['ст/б','стекло'],
+  ['пэт','пэт'],['pet','пэт'],
+  ['пл','пластик'],['пласт','пластик'],['пластм','пластик'],
+  ['мет','металл'],['жест','жесть'],['жб','жесть'],['ж/б','жесть'],
+  ['ком','комплект'],['компл','комплект'],['кмп','комплект'],
+  ['проф','профессиональный'],
+  ['натур','натуральный'],['нат','натуральный'],
+  ['конц','концентрат'],
+  ['антибакт','антибактериальный'],
+  ['ув','увлажняющий'],['отб','отбеливающий'],
+  ['муж','мужской'],['жен','женский'],['дет','детский'],
+  ['эко','эко'],['bio','био'],['organic','органик'],['org','органик'],
+]);
+function normalizeUnits(s) {
+  return s.replace(
+    /(\d+(?:[.,]\d+)?)\s*([а-яёa-zA-Z]{1,12}\.?)/gi,
+    (match, num, unitStr) => {
+      const uk = unitStr.toLowerCase().replace(/\.$/, '');
+      const canon = UNIT_CANON.get(uk);
+      if (!canon) return match;
+      const conv = UNIT_CONV[canon];
+      if (!conv) return num + canon + ' ';
+      const val = Math.round(
+        parseFloat(num.replace(',', '.')) * conv.factor * 100000
+      ) / 100000;
+      return val + conv.base + ' ';
+    }
+  );
+}
+function expandAbbr(tokens) {
+  const res = [];
+  for (const t of tokens) {
+    const exp = ABBR_DICT.get(t);
+    if (exp) {
+      for (const w of exp.split(' ')) { if (w.length > 1 && !STOP.has(w)) res.push(w); }
+    } else { res.push(t); }
+  }
+  return res;
+}
+
+
+function translitWord(w) {
+  let s = w.toLowerCase(), out = '', i = 0;
+  while (i < s.length) {
+    let hit = false;
+    for (const [lat, cyr] of TL) {
+      if (s.startsWith(lat, i)) { out += cyr; i += lat.length; hit = true; break; }
+    }
+    if (!hit) { out += s[i]; i++; }
+  }
+  for (const [re, rep] of WORD_END) out = out.replace(re, rep);
+  return out;
+}
+function normalize(raw) {
+  if (!raw) return '';
+  let s = normalizeUnits(String(raw));
+  s = s.toLowerCase()
+    .replace(/[^\wа-яёa-z0-9\s]/gi, ' ')
+    .replace(/[a-z]+/gi, m => translitWord(m))
+    .replace(/\s+/g, ' ').trim();
+  return expandAbbr(
+    s.split(' ').filter(w => w.length > 1 && !STOP.has(w))
+  ).join(' ');
+}
+
+// =============================================================================
+// VIEW / FILTER
+// =============================================================================
+function setView(v) {
+  currentView = v;
+  document.querySelectorAll('.stat').forEach(s => s.classList.toggle('active', s.dataset.v === v));
+  const aab = document.getElementById('addAllSameBCBtn');
+  if (aab) aab.style.display = v === 'samebc' ? '' : 'none';
+  filterMatcher();
+}
+
+function getCurrentMatchList() {
+  return currentView === 'samebc' ? sameBCPairs
+       : currentView === 'known'  ? knownPairs
+       : currentView === 'added'  ? addedPairs
+       : activePairs;
+}
+
+function filterMatcher() {
+  const inp = document.getElementById('matchSearchInp');
+  const q   = (inp ? inp.value : '').toLowerCase().trim();
+  const list = getCurrentMatchList();
+  if (!q) {
+    renderMatcher(list, currentView);
+    document.getElementById('mStatus').textContent = '\u041f\u043e\u043a\u0430\u0437\u0430\u043d\u043e: ' + list.length + ' \u043f\u0430\u0440';
+    return;
+  }
+  const filtered = list
+    .map((r, i) => ({ ...r, _origIdx: i }))
+    .filter(r =>
+      (r.name1||'').toLowerCase().includes(q) || (r.name2||'').toLowerCase().includes(q) ||
+      (r.bc1||'').includes(q) || (r.bc2||'').includes(q) ||
+      (r.file1||'').toLowerCase().includes(q) || (r.file2||'').toLowerCase().includes(q)
+    );
+  renderMatcher(filtered, currentView);
+  document.getElementById('mStatus').textContent = '\u041d\u0430\u0439\u0434\u0435\u043d\u043e: ' + filtered.length + ' \u0438\u0437 ' + list.length;
+}
+
+// =============================================================================
+// RENDER MATCHER
+// =============================================================================
+function renderMatcher(list, view) {
+  const empty = document.getElementById('mEmpty');
+  const table = document.getElementById('mTable');
+  const tbody = document.getElementById('mTbody');
+  if (!list.length) { empty.style.display = ''; table.style.display = 'none'; return; }
+  empty.style.display = 'none'; table.style.display = '';
+  const clickable = view === 'all' || view === 'known';
+  let html = '';
+  list.forEach((r, i) => {
+    const sc  = r.sim;
+    const cls = sc >= SIM_HIGH ? 'hi' : sc >= SIM_REVIEW ? 'mid' : 'lo';
+    const origI = (r._origIdx !== undefined) ? r._origIdx : i;
+    const rowAttr = clickable ? ' data-row-idx="' + origI + '" data-row-view="' + view + '" style="cursor:pointer"' : '';
+    let tag, btnHtml;
+    if (view === 'added') {
+      tag = '<span class="tag tag-done">\u2713 \u0434\u043e\u0431\u0430\u0432\u043b\u0435\u043d\u043e</span>'; btnHtml = '';
+    } else if (view === 'samebc') {
+      tag = '<span class="tag tag-bc">= \u0428\u041a</span>';
+      btnHtml = r.aInDB || r.bInDB
+        ? '<span style="color:#aaa;font-size:11px">\u0443\u0436\u0435 \u0432 \u0431\u0430\u0437\u0435</span>'
+        : '<button class="i-btn" data-samebc="' + origI + '" title="\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c">+</button>';
+    } else if (view === 'known') {
+      tag = '<span class="tag tag-known">\u0438\u0437\u0432\u0435\u0441\u0442\u043d\u044b</span>';
+      btnHtml = '<button class="i-btn" data-unlink="' + origI + '" title="Развязать">✂</button>';
+    } else {
+      tag = r.aInDB && r.bInDB && r.aKey !== r.bKey
+        ? '<span class="tag tag-mrg">\u043e\u0431\u044a\u0435\u0434\u0438\u043d\u0438\u0442\u044c</span>'
+        : r.aInDB || r.bInDB
+          ? '<span class="tag tag-syn">\u0441\u0438\u043d\u043e\u043d\u0438\u043c</span>'
+          : '<span class="tag tag-new">\u043d\u043e\u0432\u043e\u0435</span>';
+      btnHtml = '<button class="i-btn" data-open-modal="' + origI + '" data-modal-view="' + view + '" title="\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c">+</button>';
+    }
+    const src2ico = r.file2 === 'JSON \u0431\u0430\u0437\u0430' ? '\uD83D\uDCCB ' : '';
+    html += '<tr class="pair-a"' + rowAttr + '>'
+      + '<td class="td-n" rowspan="2" style="vertical-align:middle">' + (i+1) + '</td>'
+      + '<td class="td-score ' + cls + '" rowspan="2" style="vertical-align:middle">' + sc + '</td>'
+      + '<td><span class="src-lbl">' + esc(r.file1) + '</span></td>'
+      + '<td>' + esc(r.name1) + '</td>'
+      + '<td class="td-mono">' + esc(r.bc1) + '</td>'
+      + '<td rowspan="2" style="vertical-align:middle;text-align:center">' + tag + '</td>'
+      + '<td rowspan="2" style="vertical-align:middle"><div class="acts">' + btnHtml + '</div></td>'
+      + '</tr><tr class="pair-b"' + rowAttr + '>'
+      + '<td><span class="src-lbl">' + src2ico + esc(r.file2) + '</span></td>'
+      + '<td>' + esc(r.name2) + '</td>'
+      + '<td class="td-mono">' + esc(r.bc2) + '</td>'
+      + '</tr>';
+  });
+  tbody.innerHTML = html;
+}
+
+function rowClick(e, i, view) { if (e.target.closest('button,a,input')) return; openModal(i, view); }
+
+function clearMatcher() {
+  activePairs = []; sameBCPairs = []; knownPairs = []; addedPairs = [];
+  document.getElementById('statsRow').classList.remove('show');
+  document.getElementById('mEmpty').style.display = '';
+  document.getElementById('mTable').style.display = 'none';
+  document.getElementById('mStatus').textContent = '';
+}
+
+function addSameBC(i) {
+  const r = sameBCPairs[i]; if (!r) return;
+  saveHistory();
+  if (!db[r.bc1]) db[r.bc1] = [r.name1];
+  sameBCPairs.splice(i, 1);
+  document.getElementById('sSameBC').textContent = sameBCPairs.length;
+  notifyChange(); renderEditor(); updatePairTags();
+}
+
+// =============================================================================
+// MODAL
+// =============================================================================
+function openModal(i, view) {
+  const list = view === 'known' ? knownPairs : activePairs;
+  const r = list[i]; if (!r) return;
+  pending = { ...r, idx: i, view };
+  const sc  = r.sim;
+  const cls = sc >= SIM_HIGH ? '#155724' : sc >= SIM_REVIEW ? '#7d5a00' : '#721c24';
+  document.getElementById('mScore').innerHTML = '<span style=\"color:' + cls + '\">' + sc + '%</span>';
+  document.getElementById('mSrc1').textContent  = r.file1;
+  document.getElementById('mName1').textContent = r.name1;
+  document.getElementById('mBC1').textContent   = r.bc1;
+  document.getElementById('mSrc2').textContent  = r.file2;
+  document.getElementById('mName2').textContent = r.name2;
+  document.getElementById('mBC2').textContent   = r.bc2;
+  let action = '';
+  const isReadOnly = r.aInDB && r.bInDB && r.aKey === r.bKey;
+  if (isReadOnly)
+    action = '\u0423\u0436\u0435 \u0432 \u043e\u0434\u043d\u043e\u0439 \u0433\u0440\u0443\u043f\u043f\u0435: \u00ab' + r.aKey + '\u00bb';
+  else if (r.aInDB && r.bInDB && r.aKey !== r.bKey)
+    action = '\u041e\u0431\u044a\u0435\u0434\u0438\u043d\u0438\u0442\u044c \u00ab' + r.aKey + '\u00bb \u0438 \u00ab' + r.bKey + '\u00bb';
+  else if (!r.aInDB && r.bInDB)
+    action = '\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u00ab' + r.bc1 + '\u00bb \u043a\u0430\u043a \u0441\u0438\u043d\u043e\u043d\u0438\u043c \u043a \u00ab' + r.bKey + '\u00bb';
+  else if (r.aInDB && !r.bInDB)
+    action = '\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u00ab' + r.bc2 + '\u00bb \u043a\u0430\u043a \u0441\u0438\u043d\u043e\u043d\u0438\u043c \u043a \u00ab' + r.aKey + '\u00bb';
+  else
+    action = '\u0421\u043e\u0437\u0434\u0430\u0442\u044c \u043d\u043e\u0432\u0443\u044e \u0433\u0440\u0443\u043f\u043f\u0443: \u00ab' + r.bc1 + '\u00bb + \u00ab' + r.bc2 + '\u00bb';
+  document.getElementById('mAction').textContent = action;
+  document.getElementById('mOkBtn').textContent = isReadOnly
+    ? '\u0417\u0430\u043a\u0440\u044b\u0442\u044c'
+    : '\u041f\u043e\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u044c';
+  document.getElementById('modal').classList.add('show');
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('show'); pending = null; }
+
+function confirmAction() {
+  if (!pending) return;
+  if (pending.aInDB && pending.bInDB && pending.aKey === pending.bKey) { closeModal(); return; }
+  saveHistory();
+  const { bc1, name1, bc2, name2, aInDB, bInDB, aKey, bKey, idx, view } = pending;
+  if (aInDB && bInDB && aKey !== bKey) {
+    const a1 = db[aKey], a2 = db[bKey];
+    const syns = new Set([...a1.slice(1), bKey, ...a2.slice(1)].map(s => String(s).trim()).filter(Boolean));
+    db[aKey] = [a1[0] || a2[0], ...syns]; delete db[bKey];
+  } else if (!aInDB && bInDB) {
+    const arr = db[bKey]; if (arr && !arr.slice(1).includes(bc1)) arr.push(bc1);
+  } else if (aInDB && !bInDB) {
+    const arr = db[aKey]; if (arr && !arr.slice(1).includes(bc2)) arr.push(bc2);
+  } else {
+    if (!db[bc1]) db[bc1] = [name1, bc2];
+    else { const arr = db[bc1]; if (!arr.slice(1).includes(bc2)) arr.push(bc2); }
+  }
+  const list = view === 'known' ? knownPairs : activePairs;
+  list.splice(idx, 1); addedPairs.unshift(pending);
+  document.getElementById('sAll').textContent    = activePairs.length;
+  document.getElementById('sKnown').textContent  = knownPairs.length;
+  document.getElementById('sAdded').textContent  = addedPairs.length;
+  notifyChange(); renderEditor(); closeModal(); updatePairTags();
+}
+
+// =============================================================================
+// EDITOR
+// =============================================================================
+function findDuplicates() {
+  const seen = new Map();
+  for (const [key, val] of Object.entries(db)) {
+    seen.set(key, (seen.get(key) || 0) + 1);
+    if (Array.isArray(val))
+      for (let i = 1; i < val.length; i++) {
+        const s = String(val[i]).trim(); if (!s) continue;
+        seen.set(s, (seen.get(s) || 0) + 1);
+      }
+  }
+  const dups = new Set();
+  for (const [bc, cnt] of seen) if (cnt > 1) dups.add(bc);
+  return dups;
+}
+
+// Полный ре-рендер: пересчитывает VS.keys и запускает виртуальный скролл
+function renderEditor() {
+  const keys    = Object.keys(db);
+  const hasData = keys.length > 0;
+  const searchEl = document.getElementById('searchInp');
+  const query    = searchEl ? searchEl.value.toLowerCase().trim() : '';
+
+  document.getElementById('eEmpty').style.display = hasData ? 'none' : '';
+  document.getElementById('eTable').style.display = hasData ? ''     : 'none';
+  if (searchEl) searchEl.disabled = !hasData;
+  document.getElementById('exportBtn').disabled = !hasData;
+  document.getElementById('clearBtn').disabled  = !hasData;
+
+  VS.keys = hasData ? keys.filter(k => {
+    if (!query) return true;
+    const v = db[k] || [];
+    return k.includes(query) ||
+           (v[0] || '').toLowerCase().includes(query) ||
+           v.slice(1).join(' ').toLowerCase().includes(query);
+  }) : [];
+
+  let synTotal = 0;
+  for (const v of Object.values(db)) if (Array.isArray(v)) synTotal += Math.max(0, v.length - 1);
+
+  const dups     = findDuplicates();
+  const dupCount = dups.size;
+  const dupEl    = document.getElementById('eDupStatus');
+  if (dupCount > 0) { dupEl.textContent = '\u26a0\ufe0f \u0414\u0443\u0431\u043b\u0435\u0439: ' + dupCount; dupEl.style.display = 'inline'; }
+  else              { dupEl.style.display = 'none'; }
+
+  document.getElementById('eStatus').textContent =
+    '\u041d\u0430\u0438\u043c\u0435\u043d\u043e\u0432\u0430\u043d\u0438\u0439: ' + keys.length
+    + '  |  \u0421\u0438\u043d\u043e\u043d\u0438\u043c\u043e\u0432: ' + synTotal
+    + '  |  \u041f\u043e\u043a\u0430\u0437\u0430\u043d\u043e: ' + VS.keys.length;
+
+  const wrap = document.querySelector('#pane-editor .tbl-wrap');
+  if (wrap) wrap.scrollTop = 0;
+  renderEditorVS();
+}
+
+function checkSynDupInline(input) {
+  const key = input.dataset.key;
+  const val = (input.value || '').trim();
+  if (!val) { input.style.borderColor = ''; return; }
+  if (!db[key]) return;
+  const all = getAllBarcodes();
+  if (db[key].includes(val))  input.style.borderColor = '#d93025';
+  else if (all.has(val))      input.style.borderColor = '#e8a000';
+  else                        input.style.borderColor = '#217346';
+}
+
+function saveSynInput(input) {
+  const key = input.dataset.key;
+  const val = (input.value || '').trim();
+  input.style.borderColor = '';
+  if (!val || !db[key]) return;
+  if (db[key].includes(val)) {
+    input.style.borderColor = '#d93025';
+    setTimeout(() => { input.style.borderColor = ''; }, 1200);
+    return;
+  }
+  saveHistory();
+  db[key].push(val);
+  input.value = '';
+  notifyChange();
+  patchEditorRow(key);   // ← инкрементальное обновление, не полный ре-рендер
+}
+
+function renameMainBC(input) {
+  const oldKey = input.dataset.origkey;
+  const newKey = (input.value || '').trim();
+  if (!newKey || newKey === oldKey) return;
+  if (db[newKey]) {
+    toast('\u0428\u041a \u00ab' + newKey + '\u00bb \u0443\u0436\u0435 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u0435\u0442 \u0432 \u0431\u0430\u0437\u0435','warn');
+    input.value = oldKey; return;
+  }
+  if (!db[oldKey]) { input.value = ''; return; }
+  saveHistory();
+  db[newKey] = db[oldKey]; delete db[oldKey];
+  notifyChange(); renderEditor();
+}
+
+function getAllBarcodes() {
+  const all = new Set();
+  for (const [key, val] of Object.entries(db)) {
+    all.add(key);
+    if (Array.isArray(val)) val.slice(1).forEach(s => { s = String(s).trim(); if (s) all.add(s); });
+  }
+  return all;
+}
+
+function createGroup() {
+  const name   = document.getElementById('nName').value.trim();
+  const mainBC = document.getElementById('nMainBC').value.trim();
+  const syns   = document.getElementById('nSyns').value.split(',').map(s => s.trim()).filter(Boolean);
+  if (!mainBC) { toast('\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u0433\u043b\u0430\u0432\u043d\u044b\u0439 \u0448\u0442\u0440\u0438\u0445\u043a\u043e\u0434','warn'); return; }
+  const allBCs = getAllBarcodes();
+  if (allBCs.has(mainBC)) { toast('\u0428\u041a ' + mainBC + ' \u0443\u0436\u0435 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u0435\u0442 \u0432 \u0431\u0430\u0437\u0435','warn'); return; }
+  const dupSyn = syns.find(s => allBCs.has(s));
+  if (dupSyn && !confirm('\u0421\u0438\u043d\u043e\u043d\u0438\u043c ' + dupSyn + ' \u0443\u0436\u0435 \u0435\u0441\u0442\u044c \u0432 \u0431\u0430\u0437\u0435.\n\u0412\u0441\u0451 \u0440\u0430\u0432\u043d\u043e \u0434\u043e\u0431\u0430\u0432\u0438\u0442\u044c?')) return;
+  saveHistory();
+  db[mainBC] = [name, ...syns]; notifyChange(); renderEditor(); clearForm(); updatePairTags();
+}
+
+function clearForm() {
+  ['nName','nMainBC','nSyns'].forEach(id => { document.getElementById(id).value = ''; });
+}
+
+function clearAll() {
+  if (!confirm('\u041e\u0447\u0438\u0441\u0442\u0438\u0442\u044c \u0432\u0441\u044e \u0431\u0430\u0437\u0443?')) return;
+  saveHistory();
+  db = {}; changes = 0; currentFileName = '';
+  document.getElementById('searchInp').value = '';
+  refreshBadge(); updateStatus(); renderEditor();
+}
+
+// =============================================================================
+// EXCEL IMPORT / EXPORT
+// =============================================================================
+function exportXLSX() {
+  // Используем SheetJS (уже загружен для чтения прайсов)
+  const rows = [['Штрихкод', 'Наименование', 'Синонимы ШК']];
+  for (const [key, val] of Object.entries(db))
+    rows.push([key, Array.isArray(val) ? (val[0] || '') : '', Array.isArray(val) ? val.slice(1).join(', ') : '']);
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  // Ширина колонок
+  ws['!cols'] = [{ wch: 20 }, { wch: 44 }, { wch: 60 }];
+  // Жирный заголовок (SheetJS поддерживает через cell style только в pro, пропускаем)
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Синонимы');
+  const buf  = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  fileSave(blob, 'synonyms_' + dateStr() + '.xlsx',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', '.xlsx');
+}
+
+let xlsResolve = null;
+function showImportModeDialog(conflictCount, total) {
+  return new Promise(resolve => {
+    xlsResolve = resolve;
+    document.getElementById('xlsModalMsg').textContent =
+      conflictCount + ' \u0438\u0437 ' + total + ' \u0437\u0430\u043f\u0438\u0441\u0435\u0439 \u0443\u0436\u0435 \u0435\u0441\u0442\u044c \u0432 \u0431\u0430\u0437\u0435. \u041a\u0430\u043a \u043f\u043e\u0441\u0442\u0443\u043f\u0438\u0442\u044c?';
+    document.getElementById('xlsModal').classList.add('show');
+  });
+}
+function xlsModalResolve(mode) {
+  document.getElementById('xlsModal').classList.remove('show');
+  if (xlsResolve) { xlsResolve(mode); xlsResolve = null; }
+}
+
+async function handleXLSImport(e) {
+  const file = e.target.files[0]; if (!file) return; e.target.value = '';
+  try {
+    const rows  = await parseXLSX(file);
+    const bcCol = findCol(rows, BC_COLS), nmCol = findCol(rows, NAME_COLS), snCol = findCol(rows, SYN_COLS);
+    if (!bcCol) { toast('\u041d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u0430 \u043a\u043e\u043b\u043e\u043d\u043a\u0430 \u0448\u0442\u0440\u0438\u0445\u043a\u043e\u0434\u0430','warn'); return; }
+    const validRows   = rows.filter(r => String(r[bcCol] || '').trim());
+    const conflictCnt = validRows.filter(r => db[String(r[bcCol]).trim()]).length;
+    let mode = 'overwrite';
+    if (conflictCnt > 0) { mode = await showImportModeDialog(conflictCnt, validRows.length); if (!mode) return; }
+    saveHistory();
+    let added = 0, skipped = 0;
+    for (const row of validRows) {
+      const bc   = String(row[bcCol]).trim();
+      const name = nmCol ? String(row[nmCol] || '').trim() : bc;
+      const syns = snCol ? String(row[snCol] || '').split(',').map(s => s.trim()).filter(Boolean) : [];
+      if (db[bc] && mode === 'skip')  { skipped++; continue; }
+      if (db[bc] && mode === 'merge') {
+        const existing = db[bc];
+        const existSet = new Set(existing.slice(1).map(s => String(s).trim()));
+        syns.forEach(s => { if (s && !existSet.has(s)) existing.push(s); });
+        if (name && !existing[0]) existing[0] = name;
+        added++; continue;
+      }
+      db[bc] = [name, ...syns]; added++;
+    }
+    notifyChange(); renderEditor();
+    alert(mode === 'skip'
+      ? '\u0414\u043e\u0431\u0430\u0432\u043b\u0435\u043d\u043e: ' + added + ', \u043f\u0440\u043e\u043f\u0443\u0449\u0435\u043d\u043e: ' + skipped
+      : '\u041e\u0431\u0440\u0430\u0431\u043e\u0442\u0430\u043d\u043e: ' + added);
+  } catch(err) { toast('\u041e\u0448\u0438\u0431\u043a\u0430 \u0438\u043c\u043f\u043e\u0440\u0442\u0430: ' + err.message,'warn'); }
+}
+
+// =============================================================================
+// PROGRESS
+// =============================================================================
+function showProgress(t) {
+  document.getElementById('progressRow').classList.add('show');
+  document.getElementById('progressLbl').textContent = t;
+  document.getElementById('progressFill').style.width = '0%';
+}
+function updateProgress(p) { document.getElementById('progressFill').style.width = p + '%'; }
+function hideProgress()    { document.getElementById('progressRow').classList.remove('show'); }
+
+// =============================================================================
+// UTILS
+// =============================================================================
+function esc(s)    { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escv(s)   { return esc(s).replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+function safeId(s) { try { return btoa(unescape(encodeURIComponent(s))).replace(/=/g,''); } catch { return String(s).replace(/\W/g,'_'); } }
+function dateStr() { return new Date().toISOString().slice(0,10); }
+
+
+function toast(msg,type,ms){type=type||'info';ms=ms||3200;var r=document.getElementById('toast-rack');if(!r)return;var el=document.createElement('div');el.className='toast '+type;el.textContent=({ok:'✅',err:'❌',warn:'⚠️',info:'ℹ️'}[type]||'')+' '+msg;r.appendChild(el);requestAnimationFrame(function(){el.classList.add('show');});setTimeout(function(){el.classList.remove('show');setTimeout(function(){el.remove();},250);},ms);}
+function toggleDark(){var on=document.body.classList.toggle('dark');localStorage.setItem('syn_dark',on?'1':'0');var b=document.getElementById('darkBtn');if(b)b.textContent=on?'☀️ Тема':'🌙 Тема';}
+var LS_DB='syn_editor_db';
+function autoSave(){try{if(!Object.keys(db).length)return;localStorage.setItem(LS_DB,JSON.stringify(db));var d=document.getElementById('autosave-dot');if(d){d.textContent='✔ сохр.';d.classList.add('saved');setTimeout(function(){d.textContent='●';d.classList.remove('saved');},2000);}}catch(e){}}
+function autoLoad(){try{var raw=localStorage.getItem(LS_DB);if(!raw)return;var p=JSON.parse(raw);if(p&&typeof p==='object'&&!Array.isArray(p)&&Object.keys(p).length){db=p;updateStatus();refreshBadge();renderEditor();toast('База восстановлена ('+Object.keys(db).length+' наим.)','ok');}}catch(e){}}
+function checkOffline(){var b=document.getElementById('offline-banner');if(b)b.classList.toggle('show',!navigator.onLine);}
+function unlinkPair(i){
+  var r=knownPairs[i];if(!r)return;var key=r.aKey;var arr=db[key];if(!arr||!Array.isArray(arr))return;
+  var toRemove=null;
+  if(r.bc1!==key&&arr.indexOf(r.bc1)>0)toRemove=r.bc1;
+  else if(r.bc2!==key&&arr.indexOf(r.bc2)>0)toRemove=r.bc2;
+  if(!toRemove){toast('Нельзя удалить: ни один из ШК не является синонимом','warn');return;}
+  saveHistory();var idx=arr.indexOf(toRemove);if(idx>0)arr.splice(idx,1);
+  knownPairs.splice(i,1);document.getElementById('sKnown').textContent=knownPairs.length;
+  notifyChange();renderEditor();toast('Синоним '+toRemove+' удалён','ok');setView(currentView);
+}
+function initEventListeners(){
+  function on(id,evt,fn){var el=document.getElementById(id);if(el)el.addEventListener(evt,fn);}
+  function onAll(sel,evt,fn){document.querySelectorAll(sel).forEach(function(el){el.addEventListener(evt,fn);});}
+  on('openJsonBtn','click',function(){document.getElementById('jsonIn').click();});
+  on('saveJsonBtn','click',saveJSON);on('saveHtmlBtn','click',saveHTML);
+  on('loadPricesBtn','click',function(){document.getElementById('priceIn').click();});
+  on('undoBtn','click',undo);on('redoBtn','click',redo);on('darkBtn','click',toggleDark);
+  on('instrBtn','click',function(){var m=document.getElementById('instrModal');if(m)m.classList.toggle('show');});
+  on('instrClose','click',function(){document.getElementById('instrModal').classList.remove('show');});
+  on('kbdBtn','click',function(){var m=document.getElementById('kbdModal');if(m)m.classList.toggle('show');});
+  on('kbdClose','click',function(){document.getElementById('kbdModal').classList.remove('show');});
+  document.getElementById('kbdModal').addEventListener('click',function(e){if(e.target===this)this.classList.remove('show');});
+  document.getElementById('instrModal').addEventListener('click',function(e){if(e.target===this)this.classList.remove('show');});
+  on('rerunBtn','click',function(){if(priceFiles.length)runMatcher();});
+  on('addAllSameBCBtn','click',addAllSameBC);
+  onAll('.tab[data-tab]','click',function(){switchTab(this.dataset.tab);});
+  on('matchSearchInp','input',filterMatcher);
+  onAll('.stat[data-v]','click',function(){setView(this.dataset.v);});
+  var mt=document.getElementById('mTbody');
+  if(mt)mt.addEventListener('click',function(e){
+    var ul=e.target.closest('[data-unlink]');if(ul){e.stopPropagation();unlinkPair(+ul.dataset.unlink);return;}
+    var sb=e.target.closest('[data-samebc]');if(sb){e.stopPropagation();addSameBC(+sb.dataset.samebc);return;}
+    var om=e.target.closest('[data-open-modal]');if(om){e.stopPropagation();openModal(+om.dataset.openModal,om.dataset.modalView);return;}
+    var row=e.target.closest('tr[data-row-idx]');if(row&&!e.target.closest('button,a,input'))openModal(+row.dataset.rowIdx,row.dataset.rowView);
+  });
+  var tc=document.getElementById('tChips');if(tc)tc.addEventListener('click',function(e){var c=e.target.closest('[data-remove-file]');if(c)removeFile(+c.dataset.removeFile);});
+  on('exportBtn','click',exportXLSX);
+  on('xlsImportBtn','click',function(){document.getElementById('xlsIn').click();});
+  on('clearBtn','click',clearAll);on('createGroupBtn','click',createGroup);on('clearFormBtn','click',clearForm);
+  on('searchInp','input',renderEditor);
+  on('modalCloseX','click',closeModal);on('modalCancel','click',closeModal);on('mOkBtn','click',confirmAction);
+  document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+  on('xlsModalCloseX','click',function(){xlsModalResolve(null);});on('xlsOverwriteBtn','click',function(){xlsModalResolve('overwrite');});
+  on('xlsSkipBtn','click',function(){xlsModalResolve('skip');});on('xlsMergeBtn','click',function(){xlsModalResolve('merge');});
+  on('xlsCancelBtn','click',function(){xlsModalResolve(null);});
+  document.getElementById('xlsModal').addEventListener('click',function(e){if(e.target===this)xlsModalResolve(null);});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){[['modal',closeModal],['xlsModal',function(){xlsModalResolve(null);}],
+      ['kbdModal',function(){document.getElementById('kbdModal').classList.remove('show');}],
+      ['instrModal',function(){document.getElementById('instrModal').classList.remove('show');}]
+    ].forEach(function(p){var el=document.getElementById(p[0]);if(el&&(el.style.display!=='none'||el.classList.contains('show')))p[1]();});}
+    if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key.toLowerCase()==='z'){e.preventDefault();undo();}
+    if((e.ctrlKey||e.metaKey)&&(e.key.toLowerCase()==='y'||(e.shiftKey&&e.key.toLowerCase()==='z'))){e.preventDefault();redo();}
+    if(e.altKey&&'dDвВ'.indexOf(e.key)>=0){e.preventDefault();toggleDark();}
+  });
+  window.addEventListener('online',function(){checkOffline();toast('Соединение восстановлено','ok');});
+  window.addEventListener('offline',function(){checkOffline();toast('Нет интернета','warn',5000);});
+  checkOffline();
+}
+
+</script>
+</body>
+</html>

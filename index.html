@@ -23,32 +23,105 @@
       overflow: hidden;
     }
 
-    /* ── Toolbar ── */
+    /* ── App Navigation bar ── */
+    .app-nav {
+      background: #14512e;
+      display: flex; align-items: stretch;
+      padding: 0 10px; gap: 2px; flex-shrink: 0;
+      border-bottom: 1px solid rgba(0,0,0,0.3);
+    }
+    .app-nav a {
+      color: rgba(255,255,255,0.55);
+      text-decoration: none; font-size: 13px; font-weight: 500;
+      padding: 8px 18px; border-bottom: 3px solid transparent;
+      white-space: nowrap; letter-spacing: 0.01em;
+      transition: color .15s, background .15s;
+      display: flex; align-items: center;
+    }
+    .app-nav a:hover { color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.07); }
+    .app-nav a.nav-active { color: #fff; border-bottom-color: #5dce8a; font-weight: 700; }
+    body.dark .app-nav { background: #0d3b20; }
+
+    /* ── Toolbar (header strip) ── */
     .toolbar {
-      background: #217346;
+      background: #1c6b3a;
       color: white;
-      padding: 5px 10px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-shrink: 0;
-      flex-wrap: wrap;
+      padding: 0 12px;
+      display: flex; align-items: center; gap: 10px;
+      min-height: 34px; flex-shrink: 0;
     }
-    .toolbar-title { font-size: 14px; font-weight: 600; padding-right: 4px; white-space: nowrap; }
-    .toolbar-sep   { width: 1px; height: 20px; background: rgba(255,255,255,0.35); margin: 0 3px; flex-shrink: 0; }
-    .t-btn {
-      background: transparent; color: white;
-      border: 1px solid transparent;
-      padding: 3px 10px; font-size: 12px; font-family: inherit;
-      cursor: pointer; border-radius: 2px; white-space: nowrap;
-    }
-    .t-btn:hover { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.4); }
-    .t-btn.accent { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.12); }
-    .t-btn.accent:hover { background: rgba(255,255,255,0.25); }
+    .toolbar-title { font-size: 14px; font-weight: 600; white-space: nowrap; }
+    .toolbar-sep   { display: none; }
     .toolbar-status {
-      font-size: 11px; color: rgba(255,255,255,0.85);
+      font-size: 11px; color: rgba(255,255,255,0.75);
       flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
+    /* legacy t-btn hidden – replaced by .rb */
+    .t-btn, .t-btn-icon { display: none !important; }
+    .t-btn.accent { display: none !important; }
+    .t-btn-mine   { display: none !important; }
+
+    /* ── Ribbon toolbar ── */
+    .ribbon {
+      background: #fff;
+      border-bottom: 2px solid #dde0dd;
+      padding: 5px 8px;
+      display: flex; align-items: stretch;
+      flex-wrap: wrap; flex-shrink: 0;
+      gap: 0;
+    }
+    .rbn-group {
+      display: flex; align-items: center; gap: 2px;
+      padding: 0 8px 0 0; margin-right: 8px;
+      border-right: 1px solid #dde0dd;
+    }
+    .rbn-group:last-child { border-right: none; padding-right: 0; margin-right: 0; }
+
+    /* Ribbon button */
+    .rb {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 4px;
+      padding: 6px 12px; min-width: 64px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 5px;
+      cursor: pointer; font-family: inherit;
+      transition: background .13s, border-color .13s;
+      color: #2a2a2a; user-select: none;
+    }
+    .rb .rb-ico { font-size: 28px; line-height: 1; display: block; }
+    .rb .rb-lbl { font-size: 10.5px; color: #555; white-space: nowrap; line-height: 1.25; text-align: center; display: block; }
+    .rb:hover:not(:disabled) {
+      background: #eaf4ee; border-color: #217346;
+    }
+    .rb:hover:not(:disabled) .rb-lbl { color: #155724; }
+    .rb:active:not(:disabled) { background: #d4ecdb; }
+    .rb:disabled { opacity: .38; cursor: default; }
+    .rb.rb-accent { background: #f0faf2; border-color: #c0ddc8; }
+    .rb.rb-accent:hover:not(:disabled) { background: #daf0e3; border-color: #217346; }
+    .rb.rb-mine { background: #f0faf2; border-color: #2d9a5f; }
+    .rb.rb-mine:hover:not(:disabled) { background: #d8f0e3; border-color: #155724; }
+
+    /* chips inside ribbon */
+    .t-chips { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+    .t-chip {
+      background: #e8f4ec; border: 1px solid #2d9a5f;
+      color: #155724; padding: 2px 7px; border-radius: 10px;
+      font-size: 11px; display: flex; align-items: center; gap: 4px;
+    }
+    .t-chip-x { cursor: pointer; opacity: .65; font-size: 12px; line-height: 1; }
+    .t-chip-x:hover { opacity: 1; }
+
+    /* dark mode ribbon */
+    body.dark .ribbon { background: #1e1e1e; border-color: #3a3a3a; }
+    body.dark .rbn-group { border-color: #3a3a3a; }
+    body.dark .rb { color: #e0e0e0; }
+    body.dark .rb .rb-lbl { color: #aaa; }
+    body.dark .rb:hover:not(:disabled) { background: #1e2e25; border-color: #2d9a5f; }
+    body.dark .rb:hover:not(:disabled) .rb-lbl { color: #7dffb3; }
+    body.dark .rb.rb-accent, body.dark .rb.rb-mine { background: #1a3328; border-color: #2d9a5f; }
+    body.dark .t-chip { background: #1a3328; border-color: #2d9a5f; color: #7dffb3; }
     .inp-bc.dup-inp { color: #721c24 !important; font-weight: 600; }
     .toolbar-badge {
       background: #d4a017; color: white;
@@ -66,14 +139,38 @@
     .t-chip-x:hover { opacity: 1; }
 
     /* ── Tabs ── */
-    .tab-bar { background: #185c38; display: flex; padding: 0 8px; flex-shrink: 0; }
-    .tab {
-      color: rgba(255,255,255,0.65); padding: 5px 16px; cursor: pointer;
-      font-size: 12px; font-weight: 500; border-bottom: 2px solid transparent;
-      white-space: nowrap; user-select: none;
+    .tab-bar {
+      background: #1c6b3a; display: flex; align-items: center;
+      padding: 0 8px; flex-shrink: 0; flex-wrap: wrap;
     }
-    .tab.active { color: white; border-bottom-color: white; }
+    .tab {
+      color: rgba(255,255,255,0.6); padding: 6px 18px; cursor: pointer;
+      font-size: 12px; font-weight: 500; border-bottom: 3px solid transparent;
+      white-space: nowrap; user-select: none; letter-spacing: 0.01em;
+      transition: color .12s, background .12s; align-self: stretch;
+      display: flex; align-items: center;
+    }
+    .tab.active { color: white; border-bottom-color: #5dce8a; font-weight: 600; }
     .tab:hover:not(.active) { color: rgba(255,255,255,0.9); background: rgba(0,0,0,0.1); }
+    .tab-chips-sep { width: 1px; height: 20px; background: rgba(255,255,255,0.25); margin: 0 6px; flex-shrink: 0; }
+    .tab-chips { padding: 4px 0; flex-wrap: wrap; }
+    .tab-chips .t-chip {
+      background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35);
+      color: white; padding: 2px 8px; border-radius: 10px;
+      font-size: 11px; display: flex; align-items: center; gap: 4px;
+    }
+    .tab-chips .t-chip-x { cursor: pointer; opacity: .7; font-size: 12px; line-height: 1; }
+    .tab-chips .t-chip-x:hover { opacity: 1; }
+    .rb.rb-remove {
+      min-width: 42px; padding: 5px 6px; color: #999;
+      border-color: transparent;
+    }
+    .rb.rb-remove:hover:not(:disabled) {
+      background: #fce8e6; border-color: #d93025; color: #d93025;
+    }
+    .rb.rb-remove .rb-lbl { color: #bbb; }
+    .rb.rb-remove:hover:not(:disabled) .rb-lbl { color: #d93025; }
+    body.dark .rb.rb-remove .rb-lbl { color: #666; }
 
     /* ── Workspace ── */
     .workspace { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
@@ -82,23 +179,24 @@
 
     /* ── Sub-toolbar ── */
     .sub-bar {
-      background: #f8f8f8; border-bottom: 1px solid #d0d0d0;
-      padding: 4px 8px; display: flex; align-items: center; gap: 4px;
+      background: #f7f8f7; border-bottom: 1px solid #dde0dd;
+      padding: 5px 10px; display: flex; align-items: center; gap: 5px;
       flex-wrap: wrap; flex-shrink: 0;
     }
     .s-btn {
-      background: white; border: 1px solid #c0c0c0;
-      padding: 3px 9px; font-size: 12px; font-family: inherit;
-      cursor: pointer; border-radius: 2px; white-space: nowrap;
-      display: inline-flex; align-items: center; gap: 4px;
+      background: #fff; border: 1px solid #c8cec8;
+      padding: 4px 11px; font-size: 12px; font-family: inherit;
+      cursor: pointer; border-radius: 4px; white-space: nowrap;
+      display: inline-flex; align-items: center; gap: 5px;
+      transition: background .12s, border-color .12s;
     }
-    .s-btn:hover:not(:disabled) { background: #e8f4ec; border-color: #217346; color: #155724; }
-    .s-btn:disabled { color: #aaa; cursor: default; background: #f5f5f5; }
+    .s-btn:hover:not(:disabled) { background: #eaf4ee; border-color: #217346; color: #155724; }
+    .s-btn:disabled { color: #bbb; cursor: default; background: #f5f5f5; }
     .s-btn.danger:hover:not(:disabled) { background: #fce8e6; border-color: #d93025; color: #d93025; }
-    .s-btn.primary { background: #217346; color: white; border-color: #185c38; }
+    .s-btn.primary { background: #217346; color: white; border-color: #185c38; border-radius: 4px; }
     .s-btn.primary:hover:not(:disabled) { background: #185c38; }
-    .sub-sep { width: 1px; height: 22px; background: #d0d0d0; margin: 0 2px; flex-shrink: 0; }
-    .sub-label { font-size: 11px; color: #666; padding: 0 2px; white-space: nowrap; }
+    .sub-sep { width: 1px; height: 22px; background: #dde0dd; margin: 0 3px; flex-shrink: 0; }
+    .sub-label { font-size: 11px; color: #777; padding: 0 2px; white-space: nowrap; }
 
     /* ── New-group form ── */
     .new-row {
@@ -139,7 +237,12 @@
       padding: 4px 7px; text-align: left; font-weight: 600;
       position: sticky; top: 0; z-index: 2; white-space: nowrap; user-select: none;
     }
-    td { border: 1px solid #d8d8d8; padding: 3px 7px; vertical-align: middle; background: white; }
+    /* Green header for matcher table */
+    #mTable th {
+      background: #217346; color: white; border-color: #185c38;
+    }
+    #mTable th.td-n { background: #185c38; }
+    td { border: 1px solid #d8d8d8; padding: 6px 7px; vertical-align: middle; background: white; }
     .td-n { background: #f0f0f0 !important; width: 32px; text-align: center; color: #999; font-size: 11px; }
     th.td-n { background: #dce6f1 !important; }
     .td-mono { font-family: 'Courier New', monospace; font-size: 11px; }
@@ -301,7 +404,7 @@
     .s-btn-green:hover:not(:disabled){background:#d0ead5;border-color:#155724;}
     body.dark .s-btn-green{background:#1a3328;border-color:#2d9a5f;color:#7dffb3;}
     #eTable{table-layout:fixed;width:100%;}
-    #eTable th:nth-child(2),#eTable td:nth-child(2){width:220px;min-width:220px;max-width:220px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+    #eTable th:nth-child(2),#eTable td:nth-child(2){width:330px;min-width:330px;max-width:330px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
     #toast-rack{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column-reverse;gap:8px;pointer-events:none;}
     .toast{background:#222;color:#fff;padding:9px 16px;border-radius:4px;font-size:12px;font-family:inherit;box-shadow:0 4px 16px rgba(0,0,0,.3);opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;pointer-events:all;max-width:340px;word-break:break-word;}
     .toast.show{opacity:1;transform:translateY(0);}
@@ -321,45 +424,101 @@
     .instr-body{padding:4px 16px 12px;font-size:12px;line-height:1.6;max-height:70vh;overflow-y:auto;}
     .instr-body h3{font-size:12px;font-weight:700;margin:12px 0 4px;color:var(--primary);}
     body.dark .instr-body h3{color:#7dffb3;}
-    @media(max-width:900px){.toolbar-status{display:none;}}
-    @media(max-width:640px){.t-btn,.s-btn{padding:3px 6px;font-size:11px;}.tab{padding:5px 10px;font-size:11px;}}
+    @media(max-width:900px){.toolbar-status{display:none;}} @media(max-width:640px){.s-btn{padding:3px 7px;font-size:11px;}.tab{padding:5px 10px;font-size:11px;}.rb{padding:5px 8px;min-width:52px;}.rb .rb-ico{font-size:22px;}}
 
   </style>
 </head>
 <body>
 
-<!-- ════════════════════ TOOLBAR ════════════════════ -->
+<!-- ════════════════════ APP NAV ════════════════════ -->
+<nav class="app-nav">
+  <a href="https://erofly83-arch.github.io/obrezatel/">Excel в CSV</a>
+  <a href="https://erofly83-arch.github.io/pricematcher/">Мониторинг</a>
+  <a href="https://erofly83-arch.github.io/poiskovikexcel/" class="nav-active">Синонимы</a>
+</nav>
+
+<!-- ════════════════════ TOOLBAR + RIBBON ════════════════════ -->
 <header class="toolbar">
-  <span class="toolbar-title">📊 Редактор синонимов ШК <span style="opacity:.5;font-size:10px">v12</span></span>
-  <div class="toolbar-sep"></div>
-  <button class="t-btn" id="openJsonBtn">📂 Открыть JSON</button>
-  <button class="t-btn" id="saveJsonBtn">💾 Сохранить JSON</button>
-  <button class="t-btn" id="undoBtn"  disabled title="Отменить (Ctrl+Z)">↩ Отменить</button>
-  <button class="t-btn" id="redoBtn"  disabled title="Повторить (Ctrl+Y)">↪ Повторить</button>
-  <div class="toolbar-sep"></div>
-  <button class="t-btn" id="saveHtmlBtn">📄 Сохранить приложение</button>
-  <input type="file" id="jsonIn" accept=".json">
-  <span class="toolbar-badge" id="badge"></span>
-  <div class="toolbar-sep"></div>
-  <button class="t-btn accent" id="loadPricesBtn">📂 Загрузить прайсы</button>
-  <input type="file" id="priceIn" accept=".csv,.xlsx,.xls" multiple>
-  <div class="t-chips" id="tChips"></div>
-  <button class="t-btn t-btn-mine" id="myPriceBtn" title="Свой прайс как якорь">📋 Мой прайс</button>
-  <input type="file" id="myPriceIn" accept=".csv,.xlsx,.xls" style="display:none">
-  <div class="my-chip" id="myPriceChip" style="display:none"><span id="myChipName" style="font-size:11px;margin-right:4px"></span><button class="my-chip-x" id="myPriceRemove" title="Убрать">✕</button></div>
-  <div class="toolbar-sep"></div>
-  <button class="t-btn" id="instrBtn">📖</button>
-  <button class="t-btn" id="darkBtn" title="Тёмная тема (Alt+D)">🌙 Тема</button>
-  <button class="t-btn" id="kbdBtn" title="Горячие клавиши">⌨️</button>
+  <span class="toolbar-title">📊 Синонимы ШК <span style="opacity:.4;font-size:10px">v12</span></span>
   <span id="autosave-dot" title="Автосохранение">●</span>
   <span class="toolbar-status" id="jsonStatus">JSON не загружен</span>
+  <span class="toolbar-badge" id="badge"></span>
+  <!-- hidden file inputs -->
+  <input type="file" id="jsonIn" accept=".json">
+  <input type="file" id="priceIn" accept=".csv,.xlsx,.xls" multiple>
+  <input type="file" id="myPriceIn" accept=".csv,.xlsx,.xls" style="display:none">
 </header>
+
+<!-- ════════════════════ RIBBON ════════════════════ -->
+<div class="ribbon">
+
+  <!-- База JSON -->
+  <div class="rbn-group">
+    <button class="rb" id="openJsonBtn" title="Загрузить файл базы синонимов (JSON)">
+      <span class="rb-ico">⬇️</span>
+      <span class="rb-lbl">Загрузить<br>базу JSON</span>
+    </button>
+    <button class="rb" id="saveJsonBtn" title="Скачать базу синонимов в JSON">
+      <span class="rb-ico">⬆️</span>
+      <span class="rb-lbl">Скачать<br>базу JSON</span>
+    </button>
+  </div>
+
+  <!-- История -->
+  <div class="rbn-group">
+    <button class="rb" id="undoBtn" disabled title="Отменить последнее действие (Ctrl+Z)">
+      <span class="rb-ico">↩️</span>
+      <span class="rb-lbl">Отменить</span>
+    </button>
+    <button class="rb" id="redoBtn" disabled title="Повторить действие (Ctrl+Y)">
+      <span class="rb-ico">↪️</span>
+      <span class="rb-lbl">Повторить</span>
+    </button>
+  </div>
+
+  <!-- Прайсы поставщиков -->
+  <div class="rbn-group">
+    <button class="rb rb-accent" id="loadPricesBtn" title="Загрузить прайсы поставщиков (CSV / XLSX)">
+      <span class="rb-ico">📥</span>
+      <span class="rb-lbl">Загрузить<br>прайсы</span>
+    </button>
+  </div>
+
+  <!-- Мой прайс -->
+  <div class="rbn-group">
+    <button class="rb rb-mine" id="myPriceBtn" title="Загрузить свой прайс как якорь для поиска синонимов">
+      <span class="rb-ico">📋</span>
+      <span class="rb-lbl" id="myPriceLbl">Мой прайс</span>
+    </button>
+    <!-- кнопка «убрать» появляется рядом когда прайс загружен -->
+    <button class="rb rb-remove" id="myPriceRemove" style="display:none" title="Убрать свой прайс">
+      <span class="rb-ico" style="font-size:18px">✕</span>
+      <span class="rb-lbl">Убрать</span>
+    </button>
+    <!-- legacy chip (hidden, kept for JS compat) -->
+    <div id="myPriceChip" style="display:none"><span id="myChipName"></span></div>
+  </div>
+
+  <!-- Spacer -->
+  <div style="flex:1"></div>
+
+  <!-- Сохранить приложение (справа) -->
+  <div class="rbn-group" style="border-right:none; border-left:1px solid #dde0dd; padding-left:8px; margin-left:0">
+    <button class="rb" id="saveHtmlBtn" title="Сохранить приложение как HTML-файл">
+      <span class="rb-ico">💾</span>
+      <span class="rb-lbl">Сохранить<br>приложение</span>
+    </button>
+  </div>
+
+</div><!-- /ribbon -->
 <div id="offline-banner">⚠️ Нет подключения к интернету.</div>
 
 <!-- ════════════════════ TABS ════════════════════ -->
 <nav class="tab-bar">
   <div class="tab active" data-tab="matcher">🔍 Поиск синонимов</div>
   <div class="tab" data-tab="editor">✏️ Редактор базы</div>
+  <div class="tab-chips-sep"></div>
+  <div class="t-chips tab-chips" id="tChips"></div>
 </nav>
 
 <!-- ════════════════════ WORKSPACE ════════════════════ -->
@@ -402,18 +561,13 @@
       <table id="mTable" style="display:none">
         <thead>
           <tr>
-            <th class="td-n" rowspan="2">#</th>
-            <th class="td-score" rowspan="2">%</th>
+            <th class="td-n">#</th>
+            <th class="td-score">%</th>
             <th style="width:105px">Источник</th>
             <th>Название</th>
             <th style="width:140px">Штрихкод</th>
-            <th style="width:68px" rowspan="2">Тип</th>
-            <th style="width:44px" rowspan="2"></th>
-          </tr>
-          <tr>
-            <th style="background:#e8eff8;font-size:10px;color:#555;font-weight:500;border-top:none">Источник</th>
-            <th style="background:#e8eff8;font-size:10px;color:#555;font-weight:500;border-top:none">Название</th>
-            <th style="background:#e8eff8;font-size:10px;color:#555;font-weight:500;border-top:none">Штрихкод</th>
+            <th style="width:68px">Тип</th>
+            <th style="width:44px"></th>
           </tr>
         </thead>
         <tbody id="mTbody"></tbody>
@@ -451,7 +605,7 @@
         <thead>
           <tr>
             <th class="td-n">#</th>
-            <th style="min-width:200px">Название</th>
+            <th style="min-width:300px">Название</th>
             <th style="width:165px">Главный ШК</th>
             <th>Синонимы ШК <span style="font-weight:400;color:#888;font-size:10px">(Enter для добавления)</span></th>
             <th style="width:40px"></th>
@@ -538,8 +692,6 @@
     </div>
   </div>
 </div>
-<div class="modal-bg" id="kbdModal"><div class="modal" style="width:420px"><div class="modal-hdr"><span>⌨️ Горячие клавиши</span><button class="modal-x" id="kbdClose">✕</button></div><div class="modal-body" style="padding:12px 16px"><table class="kbd-table"><tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>Отменить</td></tr><tr><td><kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>Повторить</td></tr><tr><td><kbd>Alt</kbd>+<kbd>D</kbd></td><td>Тёмная тема</td></tr><tr><td><kbd>Esc</kbd></td><td>Закрыть окно</td></tr></table></div></div></div>
-<div class="modal-bg" id="instrModal"><div class="modal" style="width:560px;max-width:96vw"><div class="modal-hdr"><span>📖 Инструкция</span><button class="modal-x" id="instrClose">✕</button></div><div class="instr-body"><h3>📋 Режим «Мой прайс»</h3><p>Загрузите свой прайс кнопкой <b>📋 Мой прайс</b>. Матчер найдёт кандидатов из прайсов поставщиков только для ваших позиций (порог ≥25%). Кнопка <b>[+]</b> добавляет ШК поставщика как синоним вашей позиции.</p><ul><li><b>Вид Б</b> — развёрнутый: заголовок + все кандидаты сразу.</li><li><b>Вид А</b> — свёрнутый: клик раскрывает кандидатов.</li><li>«В базе» — синоним уже в JSON. «Новое» — ещё нет.</li></ul><h3>📂 Стандартный режим</h3><ol><li><b>= ШК</b> — одинаковый ШК у разных поставщиков.</li><li><b>Синонимы</b> — один товар уже в базе (по %).</li><li><b>Объединить</b> — слияние двух групп.</li><li><b>Новое</b> — создать группу кликом.</li><li><b>Синонимов в базе</b> — ✂ удаляет синоним.</li></ol><h3>💡 Советы</h3><ul><li>🔄 Пересчитать — после серии добавлений.</li><li>Ctrl+Z/Y — отмена/повтор. Автосохранение в localStorage.</li></ul></div></div></div>
 
 <script>
 "use strict";
@@ -1286,7 +1438,7 @@ function patchEditorRow(key) {
 
   refreshBadge(); updateStatus(); renderEditor();
   initEventListeners();
-  if(localStorage.getItem("syn_dark")==="1"){document.body.classList.add("dark");var _d=document.getElementById("darkBtn");if(_d)_d.textContent="☀️ Тема";}
+  if(localStorage.getItem("syn_dark")==="1"){document.body.classList.add("dark");}
   if(!Object.keys(db).length) autoLoad();
 })();
 
@@ -1603,10 +1755,10 @@ function setView(v) {
   if(aab) aab.style.display=v==='samebc'?'':'none';
   const mvt=document.getElementById('myViewToggle');
   if(mvt) mvt.style.display=(v==='mine'&&myPriceFile)?'':'none';
-  // показываем кнопку фильтра «в базе» только для вкладок all / samebc / mine
+  // кнопка «скрыть в базе» только для вкладки «Мой прайс»
   const hib=document.getElementById('hideInBaseBtn');
   const hibSep=document.getElementById('hideInBaseSep');
-  const showHib = (v==='all'||v==='samebc'||v==='mine');
+  const showHib = (v==='mine');
   if(hib)    hib.style.display    = showHib ? '' : 'none';
   if(hibSep) hibSep.style.display = showHib ? '' : 'none';
   filterMatcher();
@@ -2027,8 +2179,13 @@ function loadMyPrice(file) {
         data=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
       }
       myPriceFile={data,name:file.name};
-      document.getElementById('myChipName').textContent='📋 '+file.name;
-      document.getElementById('myPriceChip').style.display='';
+      document.getElementById('myChipName').textContent=file.name;
+      // update button label
+      var lbl=document.getElementById('myPriceLbl');
+      if(lbl) lbl.textContent=file.name;
+      var rmv=document.getElementById('myPriceRemove');
+      if(rmv) rmv.style.display='';
+      document.getElementById('myPriceChip').style.display='none';
       toast('Мой прайс загружен: '+data.length+' строк','ok');
       if(priceFiles.length) runMatcher();
     } catch(err){ toast('Ошибка: '+err.message,'err'); }
@@ -2039,6 +2196,10 @@ function removeMyPrice(){
   myPriceFile=null; myPairs=[];
   document.getElementById('myPriceChip').style.display='none';
   document.getElementById('myChipName').textContent='';
+  var lbl=document.getElementById('myPriceLbl');
+  if(lbl) lbl.textContent='Мой прайс';
+  var rmv=document.getElementById('myPriceRemove');
+  if(rmv) rmv.style.display='none';
   const ms=document.getElementById('myStat'); if(ms) ms.style.display='none';
   const el=document.getElementById('sMine'); if(el) el.textContent='0';
   if(currentView==='mine') setView('all');
@@ -2203,7 +2364,7 @@ function _confirmClose(result) {
   if (_confirmResolve) { _confirmResolve(result); _confirmResolve = null; }
 }
 function toast(msg,type,ms){type=type||'info';ms=ms||3200;var r=document.getElementById('toast-rack');if(!r)return;var el=document.createElement('div');el.className='toast '+type;el.textContent=({ok:'✅',err:'❌',warn:'⚠️',info:'ℹ️'}[type]||'')+' '+msg;r.appendChild(el);requestAnimationFrame(function(){el.classList.add('show');});setTimeout(function(){el.classList.remove('show');setTimeout(function(){el.remove();},250);},ms);}
-function toggleDark(){var on=document.body.classList.toggle('dark');localStorage.setItem('syn_dark',on?'1':'0');var b=document.getElementById('darkBtn');if(b)b.textContent=on?'☀️ Тема':'🌙 Тема';}
+function toggleDark(){var on=document.body.classList.toggle('dark');localStorage.setItem('syn_dark',on?'1':'0');}
 var LS_DB='syn_editor_db';
 function autoSave(){
   try{
@@ -2226,13 +2387,7 @@ function initEventListeners(){
   on('openJsonBtn','click',function(){document.getElementById('jsonIn').click();});
   on('saveJsonBtn','click',saveJSON); on('saveHtmlBtn','click',saveHTML);
   on('loadPricesBtn','click',function(){document.getElementById('priceIn').click();});
-  on('undoBtn','click',undo); on('redoBtn','click',redo); on('darkBtn','click',toggleDark);
-  on('instrBtn','click',function(){var m=document.getElementById('instrModal');if(m)m.classList.toggle('show');});
-  on('instrClose','click',function(){document.getElementById('instrModal').classList.remove('show');});
-  on('kbdBtn','click',function(){var m=document.getElementById('kbdModal');if(m)m.classList.toggle('show');});
-  on('kbdClose','click',function(){document.getElementById('kbdModal').classList.remove('show');});
-  document.getElementById('kbdModal').addEventListener('click',function(e){if(e.target===this)this.classList.remove('show');});
-  document.getElementById('instrModal').addEventListener('click',function(e){if(e.target===this)this.classList.remove('show');});
+  on('undoBtn','click',undo); on('redoBtn','click',redo);
   on('myPriceBtn','click',function(){document.getElementById('myPriceIn').click();});
   on('myPriceRemove','click',removeMyPrice);
   on('myPriceIn','change',function(e){if(e.target.files[0])loadMyPrice(e.target.files[0]);e.target.value='';});
@@ -2293,13 +2448,10 @@ function initEventListeners(){
   document.addEventListener('keydown',function(e){
     const inInput = e.target.matches('input,textarea,select');
     if(e.key==='Escape'){[['modal',closeModal],['xlsModal',function(){xlsModalResolve(null);}],
-      ['confirmModal',function(){_confirmClose(false);}],
-      ['kbdModal',function(){document.getElementById('kbdModal').classList.remove('show');}],
-      ['instrModal',function(){document.getElementById('instrModal').classList.remove('show');}]
+      ['confirmModal',function(){_confirmClose(false);}]
     ].forEach(function(p2){var el=document.getElementById(p2[0]);if(el&&(el.style.display!=='none'||el.classList.contains('show')))p2[1]();});}
     if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key.toLowerCase()==='z'&&!inInput){e.preventDefault();undo();}
     if((e.ctrlKey||e.metaKey)&&(e.key.toLowerCase()==='y'||(e.shiftKey&&e.key.toLowerCase()==='z'))&&!inInput){e.preventDefault();redo();}
-    if(e.altKey&&'dDвВ'.indexOf(e.key)>=0){e.preventDefault();toggleDark();}
   });
   window.addEventListener('online',function(){checkOffline();toast('Соединение восстановлено','ok');});
   window.addEventListener('offline',function(){checkOffline();toast('Нет интернета','warn',5000);});
